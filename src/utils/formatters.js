@@ -1,5 +1,45 @@
 // src/utils/formatters.js
 
+/**
+ * Приводит любой формат результата к каноническому виду (1-0, 0-1, ½-½).
+ * @param {string} resultStr - Строка с результатом.
+ * @returns {string} - Каноническая строка результата.
+ */
+export function formatResult(resultStr) {
+  if (!resultStr) return '*';
+  const str = resultStr.trim();
+  if (str.includes('1-0') || str === '1' || str.includes('+')) return '1-0';
+  if (str.includes('0-1') || str === '0' || str.includes('-')) return '0-1';
+  if (str.includes('½') || str.includes('1/2')) return '½-½';
+  return str; // Возвращаем как есть, если формат неизвестен
+}
+
+/**
+ * Преобразует SAN-нотацию хода, заменяя букву фигуры на Unicode-символ.
+ * @param {object} move - Объект хода из chess.js history({ verbose: true }).
+ * @returns {string} - Отформатированная строка хода с фигуркой.
+ */
+export function formatSanWithFigurine(move) {
+  if (!move || !move.san) return '';
+  
+  // Карта фигур
+  const figurines = {
+    p: '♙', n: '♘', b: '♗', r: '♖', q: '♕', k: '♔'
+  };
+
+  // Получаем букву фигуры из verbose-объекта
+  const piece = move.piece;
+  
+  // Если это не пешечный ход (т.е. SAN начинается с заглавной буквы)
+  if (move.san.charAt(0) >= 'A' && move.san.charAt(0) <= 'Z') {
+    // Заменяем первую букву на соответствующую фигурку
+    return (figurines[piece] || '') + move.san.slice(1);
+  }
+  
+  // Иначе это ход пешкой или рокировка, возвращаем как есть
+  return move.san;
+}
+
 export function getPointsFromResult(resultStr) {
     if (!resultStr || resultStr.trim() === '') {
         return null;
@@ -19,14 +59,6 @@ export const getInitials = (name) => {
     return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   }
   return parts[0][0].toUpperCase();
-};
-
-export const formatResult = (resultStr) => {
-  if (!resultStr) return '*';
-  if (resultStr.includes('1-0') || resultStr === '1' || resultStr.includes('+')) return '1-0';
-  if (resultStr.includes('0-1') || resultStr === '0' || resultStr.includes('-')) return '0-1';
-  if (resultStr.includes('½') || resultStr.includes('1/2')) return '½-½';
-  return resultStr;
 };
 
 export const getColorIcon = (color) => {
