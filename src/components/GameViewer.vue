@@ -103,7 +103,7 @@
               <v-divider></v-divider>
 
               <!-- Обертка для списка ходов, которая будет скроллироваться -->
-              <div class="move-list-wrapper">
+              <div class="move-list-wrapper" ref="scrollWrapper">
                 <v-table density="compact" class="move-table" fixed-header>
                   <thead>
                     <tr>
@@ -165,6 +165,7 @@ const tournamentTitle = computed(() => store.tournamentTitle);
 let boardAPI = null;
 const moves = ref([]);
 const currentPly = ref(0);
+const scrollWrapper = ref(null);
 const movesContainer = ref(null);
 
 const flipBoard = () => {
@@ -242,11 +243,27 @@ const goToMove = (index) => { currentPly.value = index + 1; boardAPI?.viewHistor
 const isCurrentMove = (index) => index === currentPly.value - 1;
 
 const scrollToMove = () => {
-  // TODO: скролится вся страница, а надо скролить только внутри таблички с ходами
-  // nextTick(() => {
-  //   const el = movesContainer.value?.querySelector('.current-move');
-  //   if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-  // });
+  nextTick(() => {
+    // Находим контейнер и сам элемент хода
+    const container = scrollWrapper.value;
+    const targetElement = movesContainer.value?.querySelector('.current-move');
+    
+    if (container && targetElement) {
+      // Вычисляем позицию для центрирования элемента в контейнере
+      const containerHeight = container.clientHeight;
+      const targetTop = targetElement.offsetTop;
+      const targetHeight = targetElement.clientHeight;
+      
+      // Новая позиция скролла
+      const scrollTop = targetTop - (containerHeight / 2) + (targetHeight / 2);
+      
+      // Плавно прокручиваем
+      container.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth'
+      });
+    }
+  });
 };
 
 const handleKeyDown = (event) => {
