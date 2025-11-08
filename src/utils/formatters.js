@@ -8,6 +8,7 @@
  */
 export function formatPlayerResult(resultStr, playerColor) {
   const result = formatResult(resultStr); // Приводим к каноническому виду
+  if (result === "*") return '*';
   if (result === '½-½') return '½';
   if (playerColor === 'w') {
     return result === '1-0' ? '1' : '0';

@@ -223,10 +223,8 @@ const analysis = computed(() => {
     }
 
     // 2. Считаем статистику по дебютам
-    console.log(store.ecoDatabase)
     if (game.pgn && store.ecoDatabase) {
       try {
-        console.log("herer")
         const chess = new Chess();
         chess.loadPgn(game.pgn);
         const history = chess.history();
@@ -241,7 +239,6 @@ const analysis = computed(() => {
         }
 
         if (foundOpening) {
-          console.log("found")
           const key = foundOpening.e;
           if (!openingAggregator[key]) {
             openingAggregator[key] = { eco: key, name: foundOpening.n, count: 0, points: 0 };
