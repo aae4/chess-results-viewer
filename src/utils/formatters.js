@@ -1,6 +1,24 @@
 // src/utils/formatters.js
 
 /**
+ * Показывает результат партии с точки зрения конкретного игрока.
+ * @param {string} resultStr - Канонический результат ('1-0', '0-1', '½-½').
+ * @param {string} playerColor - Цвет игрока ('w' или 'b').
+ * @returns {string} - '1' для победы, '0' для поражения, '½' для ничьи.
+ */
+export function formatPlayerResult(resultStr, playerColor) {
+  const result = formatResult(resultStr); // Приводим к каноническому виду
+  if (result === '½-½') return '½';
+  if (playerColor === 'w') {
+    return result === '1-0' ? '1' : '0';
+  }
+  if (playerColor === 'b') {
+    return result === '0-1' ? '1' : '0';
+  }
+  return '*'; // В случае ошибки
+}
+
+/**
  * Приводит любой формат результата к каноническому виду (1-0, 0-1, ½-½).
  * @param {string} resultStr - Строка с результатом.
  * @returns {string} - Каноническая строка результата.

@@ -1,5 +1,21 @@
 // src/utils/pgn.js
 
+/**
+ * Преобразует массив ходов (историю) в стандартную PGN-строку.
+ * @param {string[]} history - Массив ходов, например ['e4', 'e5'].
+ * @returns {string} - Отформатированная строка, например '1. e4 e5'.
+ */
+export function historyToPgnString(history) {
+    let pgn = '';
+    for (let i = 0; i < history.length; i++) {
+        if (i % 2 === 0) {
+            pgn += `${Math.floor(i / 2) + 1}. `;
+        }
+        pgn += `${history[i]} `;
+    }
+    return pgn.trim();
+}
+
 export function convertRusPgnToStd(rusPgn) {
     if (!rusPgn) return '';
     let stdPgn = rusPgn

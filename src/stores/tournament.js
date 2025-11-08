@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { loadTournamentData } from '@/services/dataLoader'
-import { getPointsFromResult } from '@/utils/formatters'
+import { getPointsFromResult, formatPlayerResult } from '@/utils/formatters'
 import { generateStatistics } from '@/utils/analysis'
 import { buildCrosstableData } from '@/utils/builders';
 
@@ -71,7 +71,7 @@ export const useTournamentStore = defineStore('tournament', () => {
                     board: game.board,
                     white: whitePlayer?.name || '?',
                     black: blackPlayer?.name || game.opponent_name,
-                    result: game.result,
+                    result: formatPlayerResult(game.result, game.color),
                     pgn: game.pgn,
                     whitePlayer,
                     blackPlayer,
@@ -90,6 +90,11 @@ export const useTournamentStore = defineStore('tournament', () => {
         };
     });
     return rounds;
+  });
+
+  const ecoData = computed(() => {
+    console.log(ecoDatabase.value)
+    return ecoDatabase.value;
   });
 
   const crosstable = computed(() => {
@@ -129,6 +134,6 @@ export const useTournamentStore = defineStore('tournament', () => {
     loading, error, tournamentTitle, players,
     fetchData,
     standings, roundsList, roundsData, crosstable, statistics,
-    getPlayerByStartNo, getGameById,
+    getPlayerByStartNo, getGameById, ecoDatabase,
   }
 })

@@ -1,17 +1,7 @@
 // src/utils/analysis.js
 import { Chess } from 'chess.js';
 import { getPointsFromResult } from './formatters';
-
-function historyToPgnString(history) {
-    let pgn = '';
-    for (let i = 0; i < history.length; i++) {
-        if (i % 2 === 0) {
-            pgn += `${Math.floor(i / 2) + 1}. `;
-        }
-        pgn += `${history[i]} `;
-    }
-    return pgn.trim();
-}
+import { historyToPgnString } from './pgn';
 
 export function generateStatistics(players, roundsList, ecoData) {
     if (!players || players.length === 0 || !ecoData) return null;
