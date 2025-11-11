@@ -7,7 +7,7 @@ const isGithubPages = location.hostname.endsWith("github.io");
 
 const DB_URL = isGithubPages
   ? "https://raw.githubusercontent.com/aae4/chess-results-viewer/multitournament_with_db/public/database.sqlite"
-  : "/chess-results-viewer/database.sqlite"; // локальный путь как сейчас
+  : "/chess-results-viewer/database.sqlite";
 
 
 async function createWorker() {
@@ -16,7 +16,7 @@ async function createWorker() {
       from: "inline",
       config: {
         serverMode: "full",
-        url: DB_URL, // ВАШ BASE PATH
+        url: DB_URL,
         requestChunkSize: 4096,
         databaseLengthBytes: 5652480 // exact byte size of the SQLite file
       },

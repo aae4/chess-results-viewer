@@ -24,7 +24,7 @@ const routes = [
   { 
     path: '/tournament/:tournamentId/player/:playerId', 
     name: 'Player', 
-    component: () => import('@/components/PlayerView.vue'), 
+    component: () => import('@/views/PlayerView.vue'), 
     props: true 
   },
   { 

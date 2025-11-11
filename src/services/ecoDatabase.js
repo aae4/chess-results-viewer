@@ -4,12 +4,12 @@ function parseEcoTsv(tsvText) {
   const db = {};
   const lines = tsvText.split('\n');
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const columns = line.split('\t');
-    if (columns.length < 2) continue; // Нам нужен хотя бы код и имя
-    const [eco, name] = columns;
-    db[eco] = name;
+      const line = lines[i].trim();
+      if (!line) continue;
+      const columns = line.split('\t');
+      if (columns.length < 3) continue;
+      const [eco, name, pgn] = columns;
+      db[pgn] = { e: eco, n: name };
   }
   return db;
 }

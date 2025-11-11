@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { dbService } from '@/services/database';
+import { getEcoDatabase } from '@/services/ecoDatabase';
 
 export const useTournamentStore = defineStore('tournaments', () => {
   // --- Глобальное состояние ---
@@ -38,39 +39,13 @@ export const useTournamentStore = defineStore('tournaments', () => {
     finally { isLoadingList.value = false; }
   }
 
-function parseEcoTsv(tsvText) {
-    const db = {};
-    const lines = tsvText.split('\n');
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const columns = line.split('\t');
-        if (columns.length < 3) continue;
-        const [eco, name, pgn] = columns;
-        db[pgn] = { e: eco, n: name };
-    }
-    return db;
-}
-
-async function loadAndParseEcoData() {
-    try {
-        const files = ['a.tsv', 'b.tsv', 'c.tsv', 'd.tsv', 'e.tsv'];
-        const promises = files.map(file => fetch(`data/${file}`).then(res => res.text()));
-        const tsvTexts = await Promise.all(promises);
-        const databases = tsvTexts.map(text => parseEcoTsv(text));
-        return Object.assign({}, ...databases);
-    } catch (error) {
-        console.error("Error loading ECO database:", error);
-        return null;
-    }
-}
-
   async function fetchTournamentData(id) {
     if (activeTournament.value?.id === parseInt(id)) return;
     
     isLoadingDetails.value = true;
     error.value = null;
     try {
+      // getEcoDatabase() теперь вызывается как сервис
       const [details, standingsData, gamesData, participantsData, crosstableRawData, statisticsRawData, ecoData] = await Promise.all([
         dbService.getTournamentDetails(id),
         dbService.getTournamentStandings(id),
@@ -78,7 +53,7 @@ async function loadAndParseEcoData() {
         dbService.getTournamentParticipants(id),
         dbService.getDataForCrosstable(id),
         dbService.getGamesForStatistics(id),
-        loadAndParseEcoData(),
+        getEcoDatabase(),
       ]);
       
       activeTournament.value = details;
@@ -88,6 +63,7 @@ async function loadAndParseEcoData() {
       crosstableData.value = crosstableRawData;
       statisticsData.value = statisticsRawData;
       ecoDatabase.value = ecoData;
+
     } catch (e) { error.value = e.message; } 
     finally { isLoadingDetails.value = false; }
   }

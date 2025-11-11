@@ -1,7 +1,83 @@
 // src/utils/statisticsCalculator.js
-import { formatResult } from '@/utils/formatters';
+import { formatResult, getPointsFromResult, formatPlayerResult } from '@/utils/formatters';
 import { historyToPgnString } from '@/utils/pgn';
 import { Chess } from 'chess.js';
+
+/**
+ * Вычисляет персональную статистику игрока в рамках одного турнира.
+ * @param {object} data - Объект с данными.
+ * @param {Array} data.playerGames - Список игр конкретного игрока.
+ * @param {object} data.ecoDatabase - База дебютов.
+ * @returns {object} - Готовый объект со статистикой игрока.
+ */
+export function calculatePlayerStatisticsInTournament({ playerGames, ecoDatabase }) {
+  const stats = {
+    colorStats: {
+      white: { games: 0, points: 0, percent: 0 },
+      black: { games: 0, points: 0, percent: 0 },
+    },
+    openingStats: [],
+  };
+
+  if (!playerGames || playerGames.length === 0 || !ecoDatabase) {
+    return stats;
+  }
+
+  const openingAggregator = {};
+
+  playerGames.forEach(game => {
+    const points = getPointsFromResult(formatPlayerResult(game.result, game.color));
+    if (points === null) return; // Пропускаем несыгранные
+
+    // 1. Считаем статистику по цвету
+    if (game.color === 'w') {
+      stats.colorStats.white.games++;
+      stats.colorStats.white.points += points;
+    } else if (game.color === 'b') {
+      stats.colorStats.black.games++;
+      stats.colorStats.black.points += points;
+    }
+
+    // 2. Считаем статистику по дебютам
+    if (game.pgn_moves) {
+      try {
+        const chess = new Chess();
+        chess.loadPgn(game.pgn_moves);
+        const history = chess.history();
+        let foundOpening = null;
+
+        for (let i = Math.min(history.length, 20); i > 0; i--) {
+          const pgnStr = historyToPgnString(history.slice(0, i));
+          if (ecoDatabase[pgnStr]) {
+            foundOpening = ecoDatabase[pgnStr];
+            break;
+          }
+        }
+
+        if (foundOpening) {
+          const key = foundOpening.e;
+          if (!openingAggregator[key]) {
+            openingAggregator[key] = { eco: key, name: foundOpening.n, count: 0, points: 0 };
+          }
+          openingAggregator[key].count++;
+          openingAggregator[key].points += points;
+        }
+      } catch (e) { /* Игнорируем ошибки парсинга PGN */ }
+    }
+  });
+
+  // 3. Форматируем результат
+  if (stats.colorStats.white.games > 0) {
+    stats.colorStats.white.percent = (stats.colorStats.white.points / stats.colorStats.white.games) * 100;
+  }
+  if (stats.colorStats.black.games > 0) {
+    stats.colorStats.black.percent = (stats.colorStats.black.points / stats.colorStats.black.games) * 100;
+  }
+
+  stats.openingStats = Object.values(openingAggregator).sort((a, b) => b.count - a.count || b.points - a.points);
+
+  return stats;
+}
 
 /**
  * Вычисляет полную статистику по турниру на основе данных из хранилища.

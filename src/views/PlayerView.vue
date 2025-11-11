@@ -152,7 +152,8 @@ import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTournamentStore } from '@/stores/tournamentStore';
 import { historyToPgnString } from '@/utils/pgn';
-import { getPointsFromResult, getInitials, getColorIcon, formatPlayerResult } from '@/utils/formatters';
+import { getInitials, getColorIcon, formatPlayerResult } from '@/utils/formatters';
+import { calculatePlayerStatisticsInTournament } from '@/utils/statisticsCalculator';
 import { Chess } from 'chess.js';
 
 const props = defineProps({
@@ -200,68 +201,10 @@ const ratingChangeColor = computed(() => {
 });
 
 const analysis = computed(() => {
-  const stats = {
-    colorStats: { white: { games: 0, points: 0, percent: 0 }, black: { games: 0, points: 0, percent: 0 } },
-    openingStats: [],
-  };
-  
-  if (!playerGames.value || playerGames.value.length === 0) return stats;
-
-  const openingAggregator = {};
-
-  playerGames.value.forEach(game => {
-    const points = getPointsFromResult(formatPlayerResult(game.result, game.color))
-    if (points === null) return; // Пропускаем несыгранные
-
-    // 1. Считаем статистику по цвету
-    if (game.color === 'w') {
-      stats.colorStats.white.games++;
-      stats.colorStats.white.points += points;
-    } else if (game.color === 'b') {
-      stats.colorStats.black.games++;
-      stats.colorStats.black.points += points;
-    }
-
-    // 2. Считаем статистику по дебютам (логика на клиенте)
-    // 2. Считаем статистику по дебютам
-    if (game.pgn_moves && store.ecoDatabase) {
-      try {
-        const chess = new Chess();
-        chess.loadPgn(game.pgn_moves);
-        const history = chess.history();
-        let foundOpening = null;
-
-        for (let i = Math.min(history.length, 20); i > 0; i--) { // Ищем не глубже 10 ходов (20 полуходов)
-          const pgnStr = historyToPgnString(history.slice(0, i)); 
-          if (store.ecoDatabase[pgnStr]) {
-            foundOpening = store.ecoDatabase[pgnStr];
-            break;
-          }
-        }
-
-        if (foundOpening) {
-          const key = foundOpening.e;
-          if (!openingAggregator[key]) {
-            openingAggregator[key] = { eco: key, name: foundOpening.n, count: 0, points: 0 };
-          }
-          openingAggregator[key].count++;
-          openingAggregator[key].points += points;
-        }
-      } catch (e) { /* Игнорируем ошибки парсинга PGN */ }
-    }
+  return calculatePlayerStatisticsInTournament({
+    playerGames: store.activePlayerGames,
+    ecoDatabase: store.ecoDatabase
   });
-
-  // 3. Форматируем результат
-  if (stats.colorStats.white.games > 0) {
-    stats.colorStats.white.percent = (stats.colorStats.white.points / stats.colorStats.white.games) * 100;
-  }
-  if (stats.colorStats.black.games > 0) {
-    stats.colorStats.black.percent = (stats.colorStats.black.points / stats.colorStats.black.games) * 100;
-  }
-
-  stats.openingStats = Object.values(openingAggregator).sort((a, b) => b.count - a.count || b.points - a.points);
-  
-  return stats;
 });
 </script>
 
