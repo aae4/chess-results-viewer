@@ -3,14 +3,22 @@ import { createDbWorker } from "sql.js-httpvfs";
 const workerUrl = new URL("sql.js-httpvfs/dist/sqlite.worker.js", import.meta.url);
 const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 
+const isGithubPages = location.hostname.endsWith("github.io");
+
+const DB_URL = isGithubPages
+  ? "https://raw.githubusercontent.com/aae4/chess-results-viewer/multitournament_with_db/public/database.sqlite"
+  : "/chess-results-viewer/database.sqlite"; // локальный путь как сейчас
+
+
 async function createWorker() {
   const worker = await createDbWorker(
     [{
       from: "inline",
       config: {
         serverMode: "full",
-        url: "/chess-results-viewer/database.sqlite", // ВАШ BASE PATH
+        url: DB_URL, // ВАШ BASE PATH
         requestChunkSize: 4096,
+        databaseLengthBytes: 5652480 // exact byte size of the SQLite file
       },
     }],
     workerUrl.toString(),
