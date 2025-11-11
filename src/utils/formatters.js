@@ -27,8 +27,8 @@ export function formatPlayerResult(resultStr, playerColor) {
 export function formatResult(resultStr) {
   if (!resultStr) return '*';
   const str = resultStr.trim();
-  if (str.includes('1-0') || str === '1' || str.includes('+')) return '1-0';
-  if (str.includes('0-1') || str === '0' || str.includes('-')) return '0-1';
+  if (str.includes('1-0') || str === '1') return '1-0';
+  if (str.includes('0-1') || str === '0') return '0-1';
   if (str.includes('½') || str.includes('1/2')) return '½-½';
   return str; // Возвращаем как есть, если формат неизвестен
 }

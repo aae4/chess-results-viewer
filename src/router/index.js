@@ -1,56 +1,46 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
-// Замените 'chess-results-viewer' на НАЗВАНИЕ ВАШЕГО РЕПОЗИТОРИЯ
-const repoName = 'chess-results-viewer';
-
 const routes = [
   { 
     path: '/', 
-    redirect: '/standings' 
+    name: 'TournamentsList',
+    component: () => import('@/views/TournamentsListView.vue') 
+  },
+  {
+    path: '/tournament/:tournamentId',
+    name: 'TournamentDashboard',
+    component: () => import('@/views/TournamentDashboard.vue'),
+    props: true,
+
+    redirect: to => ({ name: 'Standings', params: { tournamentId: to.params.tournamentId } }),
+    children: [
+      { path: 'standings', name: 'Standings', component: () => import('@/views/StandingsView.vue') },
+      { path: 'rounds', name: 'Rounds', component: () => import('@/views/RoundsView.vue') },
+      { path: 'participants', name: 'Participants', component: () => import('@/views/ParticipantsView.vue') },
+      { path: 'crosstable', name: 'Crosstable', component: () => import('@/views/CrosstableView.vue') },
+      { path: 'statistics', name: 'Statistics', component: () => import('@/views/StatisticsView.vue') },
+    ]
   },
   { 
-    path: '/standings', 
-    name: 'standings',
-    component: () => import('@/views/StandingsView.vue') 
-  },
-  { 
-    path: '/rounds', 
-    name: 'rounds',
-    component: () => import('@/views/RoundsView.vue') 
-  },
-  { 
-    path: '/participants', 
-    name: 'participants',
-    component: () => import('@/views/ParticipantsView.vue') 
-  },
-  { 
-    path: '/crosstable', 
-    name: 'crosstable',
-    component: () => import('@/views/CrosstableView.vue') 
-  },
-  { 
-    path: '/statistics', 
-    name: 'statistics',
-    component: () => import('@/views/StatisticsView.vue') 
-  },
-  { 
-    path: '/player/:start_no', 
-    name: 'player', 
-    // Мы переиспользуем компонент, но теперь он работает как страница
+    path: '/tournament/:tournamentId/player/:playerId', 
+    name: 'Player', 
     component: () => import('@/components/PlayerView.vue'), 
     props: true 
   },
   { 
-    path: '/game/:id', 
-    name: 'game', 
-    // Аналогично для GameViewer
-    component: () => import('@/components/GameViewer.vue'), 
+    path: '/game/:gameId', 
+    name: 'Game', 
+    component: () => import('@/views/GameView.vue'), 
     props: true 
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    redirect: { name: 'TournamentsList' },
   },
 ];
 
 const router = createRouter({
-  // Используем HashHistory, т.к. это оптимально для GitHub Pages
   history: createWebHashHistory(),
   routes,
 });

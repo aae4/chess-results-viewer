@@ -93,12 +93,10 @@ export const useTournamentStore = defineStore('tournament', () => {
   });
 
   const ecoData = computed(() => {
-    console.log(ecoDatabase.value)
     return ecoDatabase.value;
   });
 
   const crosstable = computed(() => {
-    // Теперь здесь простой и безопасный вызов чистой функции.
     return buildCrosstableData(players.value, roundsList.value);
   });
 

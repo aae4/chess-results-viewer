@@ -1,90 +1,162 @@
 <template>
-  <v-card class="crosstable-wrapper ">
-    <v-table class="crosstable" density="compact">
-      <thead>
-        <tr>
-          <!-- Добавляем класс для "липкой" колонки -->
-          <th class="rank-col sticky-col">#</th>
-          <th class="player-col sticky-col">Игрок</th>
-          <th v-for="n in store.roundsList" :key="n" class="text-center round-col">{{ n }}</th>
-          <th class="text-center points-col">Очки</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="player in store.crosstable" :key="player.start_no">
-          <!-- Добавляем класс для "липкой" колонки -->
-          <td class="text-center rank-col sticky-col">{{ player.start_no }}</td>
-          <td class="player-col sticky-col">
-            <a href="#" @click.prevent="goToPlayer(player.start_no)" class="player-link text-subtitle-1 font-weight-medium">
-              {{ player.name }}
-            </a>
-          </td>
-          
-          <!-- Ячейки с результатами -->
-          <td 
-            v-for="(res, i) in player.results" 
-            :key="i" 
-            class="text-center round-col result-cell"
-            :class="getResultCellClass(res, player.start_no)"
-            @click="goToGame(res, i + 1, player.start_no)"
-          >
-            <!-- Если это ячейка игры с самим собой -->
-            <div v-if="res && res.opponent_start_no === player.start_no" class="self-play-cell"></div>
-            
-            <!-- Если есть результат игры -->
-            <v-tooltip v-else-if="res" location="top" :disabled="!res.opponent_name">
-              <template v-slot:activator="{ props }">
-                <div v-bind="props" class="cell-content">
-                  <span class="mr-1">{{ res.opponent_start_no }}</span>
-                  <v-icon :icon="getColorIcon(res.color)" size="x-small"></v-icon>
-                </div>
-              </template>
-              <span>{{ getResultSymbol(res.points) }} vs {{ res.opponent_name }}</span>
-            </v-tooltip>
-            
-            <!-- Если это пропуск тура (bye) или нет данных -->
-            <span v-else>-</span>
-          </td>
+  <v-card>
+    <v-card-text class="crosstable-wrapper pa-0">
+      <!-- Добавляем состояние загрузки -->
+      <div v-if="store.isLoadingDetails" class="text-center pa-10">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      </div>
+      <v-table v-else class="crosstable" density="compact">
+        <thead>
+          <tr>
+            <th class="rank-col sticky-col">#</th>
+            <th class="player-col sticky-col">Игрок</th>
+            <th v-for="n in roundsList" :key="n" class="text-center round-col">{{ n }}</th>
+            <th class="text-center points-col">Очки</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Итерируемся по нашему новому computed `crosstable` -->
+          <tr v-for="player in crosstable" :key="player.player_id">
+            <td class="text-center rank-col sticky-col">{{ player.starting_rank }}</td>
+            <td class="player-col sticky-col">
+              <a href="#" @click.prevent="goToPlayer(player.player_id)" class="player-link text-subtitle-1 font-weight-medium">
+                {{ player.player_name }}
+              </a>
+            </td>
+            <td 
+              v-for="(roundNum, i) in roundsList" 
+              :key="i" 
+              class="text-center round-col result-cell"
+              :class="getResultCellClass(player.results[i])"
+              @click="goToGame(player.results[i])"
+            >
+              <v-tooltip v-if="player.results[i]" location="top" :disabled="!player.results[i].opponent_name">
+                <template v-slot:activator="{ props }">
+                  <div v-bind="props" class="cell-content">
+                    <span class="mr-1">{{ player.results[i].opponent_starting_rank }}</span>
+                    <v-icon :icon="getColorIcon(player.results[i].color)" size="x-small"></v-icon>
+                  </div>
+                </template>
+                <span>{{ getResultSymbol(player.results[i].points) }} vs {{ player.results[i].opponent_name }}</span>
+              </v-tooltip>
+              <!-- Если это пропуск тура (bye) или нет данных -->
+              <span v-else>-</span>
+            </td>
 
-          <td class="text-center points-col font-weight-bold text-h6">{{ player.totalPoints }}</td>
-        </tr>
-      </tbody>
-    </v-table>
+            <td class="text-center points-col font-weight-bold text-h6">{{ player.totalPoints }}</td>
+          </tr>
+        </tbody>
+      </v-table>
+    </v-card-text>
   </v-card>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-import { useTournamentStore } from '@/stores/tournament';
-import { getColorIcon, getResultSymbol } from '@/utils/formatters';
+import { computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useTournamentStore } from '@/stores/tournamentStore';
+import { getPointsFromResult, formatPlayerResult, getColorIcon, getResultSymbol } from '@/utils/formatters';
 
 const store = useTournamentStore();
 const router = useRouter();
+const route = useRoute();
 
-const goToPlayer = (startNo) => {
-  if (startNo) {
-    router.push({ name: 'player', params: { start_no: startNo } });
+// const roundsList = computed(() => {
+//   if (!store.activeTournament?.rounds_count) return [];
+//   return Array.from({ length: store.activeTournament.rounds_count }, (_, i) => i + 1);
+// });
+
+const roundsList = computed(() => {
+  // 1. Приоритетный источник: данные о турнире
+  if (store.activeTournament?.rounds_count > 0) {
+    return Array.from({ length: store.activeTournament.rounds_count }, (_, i) => i + 1);
   }
-};
-
-const goToGame = (result, round, playerStartNo) => {
-  // Переходим к партии только если есть результат, PGN (подразумевается, раз есть доска) и это не игра с собой
-  if (!result || !result.board || result.opponent_start_no === playerStartNo) {
-    return;
-  }
-  const gameId = `${round}-${result.board}`;
-  router.push({ 
-    name: 'game', 
-    params: { id: gameId },
-    query: { pov: playerStartNo } // Передаем, с чьей стороны смотреть
-  });
-};
-
-// Функция для классов "тепловой карты"
-const getResultCellClass = (result, playerStartNo) => {
-  if (!result || !result.opponent_start_no) return '';
-  if (result.opponent_start_no === playerStartNo) return 'self-play-cell';
   
+  // 2. Запасной вариант: вычисляем по фактическому количеству партий
+  if (store.games && store.games.length > 0) {
+    const maxRound = Math.max(...store.games.map(g => parseInt(g.round) || 0));
+    if (maxRound > 0) {
+      return Array.from({ length: maxRound }, (_, i) => i + 1);
+    }
+  }
+  
+  // 3. Крайний случай: если данных нет вообще
+  return [1];
+});
+
+const crosstable = computed(() => {
+  if (!store.crosstableData.length) return [];
+
+  const playersMap = new Map();
+  
+  // 1. Создаем карту всех участников для быстрого доступа
+  const roundsCount = Math.max(...store.games.map(g => parseInt(g.round) || 0))
+  store.crosstableData.forEach(game => {
+    if (!playersMap.has(game.player_id)) {
+      playersMap.set(game.player_id, {
+        player_id: game.player_id,
+        player_name: game.player_name,
+        starting_rank: game.starting_rank,
+        results: new Array(roundsCount).fill(null), // Создаем пустой массив нужной длины
+        totalPoints: 0,
+      });
+    }
+  });
+
+  // 2. Заполняем результаты игр
+  store.crosstableData.forEach(game => {
+    if (!game.round) return; // Пропускаем, если это не игра
+
+    const playerEntry = playersMap.get(game.player_id);
+    const roundIndex = parseInt(game.round) - 1;
+
+    //const points = getPointsFromResult(game.result);
+    const points = getPointsFromResult(formatPlayerResult(game.result, game.color))
+    if (points !== null) {
+      playerEntry.totalPoints += points;
+    }
+    
+    // Ищем стартовый номер оппонента для отображения
+    const opponent = playersMap.get(game.opponent_player_id);
+
+    playerEntry.results[roundIndex] = {
+      points: points,
+      color: game.color,
+      opponent_name: game.opponent_name,
+      opponent_starting_rank: opponent?.starting_rank || '?',
+      game_id: game.game_id 
+    };
+  });
+
+  // 3. Конвертируем карту в массив и сортируем
+  const result = Array.from(playersMap.values());
+  return result.sort((a, b) => {
+    if (b.totalPoints !== a.totalPoints) {
+      return b.totalPoints - a.totalPoints;
+    }
+    return a.starting_rank - b.starting_rank;
+  });
+});
+
+const goToPlayer = (playerId) => {
+  if (playerId) {
+    router.push({ 
+      name: 'Player', 
+      params: { 
+        tournamentId: route.params.tournamentId,
+        playerId: playerId 
+      } 
+    });
+  }
+};
+
+const goToGame = (result) => {
+  if (!result || !result.game_id) return;
+  router.push({ name: 'Game', params: { gameId: result.game_id } });
+};
+
+const getResultCellClass = (result) => {
+  if (!result) return '';
   if (result.points === 1) return 'result-win';
   if (result.points === 0.5) return 'result-draw';
   if (result.points === 0) return 'result-loss';

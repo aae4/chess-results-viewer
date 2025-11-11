@@ -7,9 +7,10 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from tqdm.asyncio import tqdm_asyncio
 import logging
+import random
+from datetime import datetime
 
-# --- ГЛОБАЛЬНЫЕ НАСТРОЙКИ ---
-DB_NAME = 'database.sqlite'
+DB_NAME = 'database_test.sqlite'
 EXCEL_FILE = 'tournaments_base.xlsx'
 PGN_FILE = 'full_pgn_base.pgn'
 MAX_CONCURRENT_REQUESTS = 10  # ОГРАНИЧЕНИЕ ПАРАЛЛЕЛЬНЫХ ЗАПРОСОВ
@@ -66,9 +67,10 @@ CREATE TABLE IF NOT EXISTS games (
     black_performance_id  INTEGER NOT NULL,
     round                 TEXT,
     board                 TEXT,
-    result                TEXT NOT NULL,
+    result                TEXT,
+    game_date             TEXT,
     eco_code              TEXT,
-    pgn_moves             TEXT NOT NULL,
+    pgn_moves             TEXT,
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id),
     FOREIGN KEY (white_performance_id) REFERENCES player_performances(id),
     FOREIGN KEY (black_performance_id) REFERENCES player_performances(id)
@@ -79,6 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_players_national_id ON players(national_id);
 CREATE INDEX IF NOT EXISTS idx_players_name_key ON players(name_key);
 CREATE INDEX IF NOT EXISTS idx_performances_player_tournament ON player_performances(player_id, tournament_id);
 CREATE INDEX IF NOT EXISTS idx_games_tournament_id ON games(tournament_id);
+CREATE INDEX IF NOT EXISTS idx_tournaments_start_date ON tournaments(start_date);
 """
 
 def safe_int(value):
@@ -138,6 +141,9 @@ def find_or_create_player(conn, name, fide_id, national_id, birth_year=None, fed
     
     # Корректная обработка FIDE ID = '0'
     fide_id = None if fide_id == '0' else fide_id
+
+    # Корректная обработка ФШР ID = '0'
+    national_id = None if national_id == '0' else national_id
     
     if fide_id:
         cursor.execute("SELECT id FROM players WHERE fide_id = ?", (fide_id,))
@@ -206,7 +212,7 @@ def load_excel_base():
         return {}
 
 def parse_pgn_file():
-    logging.info(f"Парсинг PGN-базы из {PGN_FILE}...")
+    logging.info(f"Парсинг PGN-базы из {PGN_FILE} с дедупликацией...")
     try:
         with open(PGN_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -214,7 +220,8 @@ def parse_pgn_file():
         logging.error(f"Файл {PGN_FILE} не найден!")
         return {}
 
-    pgn_games = []
+    # 1. Первичный парсинг всех игр в плоский список
+    all_pgn_games = []
     raw_games = content.strip().split('\n\n[Event')
     raw_games = [raw_games[0]] + ['[Event' + game for game in raw_games[1:]]
     
@@ -230,17 +237,41 @@ def parse_pgn_file():
             game_data['moves'] = re.sub(r'\s+', ' ', moves_match.group(1).replace('\n', ' ')).strip()
         
         if 'event' in game_data and 'white' in game_data and 'black' in game_data:
-            pgn_games.append(game_data)
+            all_pgn_games.append(game_data)
             
+    total_games_found = len(all_pgn_games)
+    logging.info(f"Найдено всего {total_games_found} записей о партиях в PGN.")
+
+    # 2. Группировка с дедупликацией
+    # Структура: {'название_турнира': {уникальный_ключ_партии: данные_партии}}
     tournaments_from_pgn = {}
-    for game in pgn_games:
+    for game in all_pgn_games:
         event_name = game['event'].strip()
-        if event_name not in tournaments_from_pgn:
-            tournaments_from_pgn[event_name] = []
-        tournaments_from_pgn[event_name].append(game)
         
-    logging.info(f"Найдено {len(pgn_games)} партий в {len(tournaments_from_pgn)} уникальных турнирах PGN.")
-    return tournaments_from_pgn
+        # Если турнир встречается впервые, создаем для него словарь
+        if event_name not in tournaments_from_pgn:
+            tournaments_from_pgn[event_name] = {}
+            
+        # Создаем уникальный, не зависящий от цвета ключ для партии
+        white_key = normalize_player_name_key(game['white'])
+        black_key = normalize_player_name_key(game['black'])
+        game_key = tuple(sorted((white_key, black_key)))
+        
+        # Добавляем/перезаписываем партию. Последняя встреченная запись останется.
+        tournaments_from_pgn[event_name][game_key] = game
+        
+    # 3. Преобразуем словари партий обратно в списки
+    final_tournaments = {}
+    total_unique_games = 0
+    for name, games_dict in tournaments_from_pgn.items():
+        unique_games_list = list(games_dict.values())
+        final_tournaments[name] = unique_games_list
+        total_unique_games += len(unique_games_list)
+        
+    logging.info(f"Найдено {len(final_tournaments)} уникальных турниров.")
+    logging.info(f"После дедупликации осталось {total_unique_games} уникальных партий (удалено {total_games_found - total_unique_games} дубликатов).")
+    
+    return final_tournaments
 
 def create_matching_key(name):
     if not name: return ""
@@ -256,7 +287,7 @@ def create_matching_key(name):
         return '_'.join(parts[:2])
 
 def find_main_table(soup, keywords):
-    """Надежный поиск нужной таблицы по заголовку H2."""
+    """Поиск нужной таблицы по заголовку H2."""
     for h2 in soup.find_all('h2'):
         h2_text = h2.get_text(strip=True).lower()
         for keyword in keywords:
@@ -397,6 +428,10 @@ def parse_participants(soup, base_url, tnr_id):
 #     })
 #     return player_data
 
+def create_header_map(header_row):
+    """Создает карту 'название заголовка' -> 'индекс колонки'."""
+    return {th.get_text(strip=True).lower(): i for i, th in enumerate(header_row.find_all('th'))}
+
 async def parse_player_details(session, player_data, semaphore):
     """Использует семафор для ограничения параллельных запросов."""
     async with semaphore:
@@ -427,13 +462,32 @@ async def parse_player_details(session, player_data, semaphore):
     games = []
     games_table = info_table.find_next('table', class_='CRs1')
     if games_table:
+        header_row = games_table.find('tr', class_='CRg1b')
+        if header_row:
+            header_map = create_header_map(header_row)
+            KEY_ROUND = next((k for k in header_map if k in ['тур', 'rd.']), None)
+            KEY_BOARD = next((k for k in header_map if k in ['bo.', 'brd.']), None)
+            KEY_OPPONENT = next((k for k in header_map if k in ['имя', 'name']), None)
+
         for row in games_table.find_all('tr', class_=['CRg1', 'CRg2']):
             cells = row.find_all('td')
             if len(cells) < 10: continue
+
+            rn = None
+            board = None
+            opponent_name = None
+            if KEY_ROUND: rn = cells[header_map[KEY_ROUND]].get_text(strip=True),
+            if KEY_BOARD: board = cells[header_map[KEY_BOARD]].get_text(strip=True),
+            if KEY_OPPONENT: opponent_name = cells[header_map[KEY_OPPONENT]].get_text(strip=True),
+
+            # print("parsing:")
+            # print()
+            # print(rn)
+            # print(board)
             games.append({
-                'round': cells[0].get_text(strip=True),
-                'board': cells[1].get_text(strip=True),
-                'opponent_name': cells[4].get_text(strip=True),
+                'round': cells[header_map[KEY_ROUND]].get_text(strip=True) if KEY_ROUND else "?",
+                'board': cells[header_map[KEY_BOARD]].get_text(strip=True) if KEY_BOARD else "?",
+                'opponent_name': cells[header_map[KEY_OPPONENT]].get_text(strip=True) if KEY_OPPONENT else "",
             })
     player_data['games'] = games
     return player_data
@@ -457,7 +511,7 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
         details = parse_tournament_details(main_soup)
 
         participants = parse_participants(main_soup, main_url, tnr_id)
-        
+
         if not participants:
             return f"Предупреждение: не найден список участников для tnr{tnr_id}"
 
@@ -466,13 +520,40 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
 
         failed_details_count = sum(1 for p in full_participants_data if p.get('fetch_failed'))
 
+        game_dates = []
+        for game in pgn_games:
+            date_str = game.get('date', '????.??.??').replace('.', '-')
+            # Пытаемся преобразовать в объект datetime для корректной сортировки
+            try:
+                # Формат YYYY-MM-DD
+                game_dates.append(datetime.strptime(date_str, '%Y-%m-%d'))
+            except ValueError:
+                continue # Игнорируем некорректные даты
+
+        start_date = min(game_dates).strftime('%Y-%m-%d') if game_dates else None
+        end_date = max(game_dates).strftime('%Y-%m-%d') if game_dates else start_date
+
+        site = details.get('Место проведения')
+        # 2. Запасной вариант - данные из PGN (берем из первой партии)
+        if not site and pgn_games:
+            site = pgn_games[0].get('site')
+
+        all_rounds = [
+            safe_int(game.get('round'))
+            for p_data in full_participants_data
+            for game in p_data.get('games', [])
+            if safe_int(game.get('round')) is not None
+        ]
+        rounds_count = max(all_rounds) if all_rounds else 0
+
         cursor.execute("""
-            INSERT OR IGNORE INTO tournaments (name, tnr_id, site, city, organizer, arbiter, time_control, federation) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR IGNORE INTO tournaments (name, tnr_id, site, city, organizer, arbiter, time_control, federation, start_date, end_date, rounds_count) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            pgn_tournament_name, tnr_id, details.get('Место проведения'), details.get('Город'),
+            pgn_tournament_name, tnr_id, site, details.get('Город'),
             details.get('Организатор(ы)'), details.get('Главный арбитр'), 
-            details.get('Контроль времени (Standard)'), details.get('Федерация')
+            details.get('Контроль времени (Standard)'), details.get('Федерация'),
+            start_date, end_date, rounds_count
         ))
         cursor.execute("SELECT id FROM tournaments WHERE tnr_id = ?", (tnr_id,))
         tournament_id = cursor.fetchone()[0]
@@ -480,7 +561,9 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
         perf_map_by_key = {}
         for p_data in full_participants_data:
             player_id = find_or_create_player(conn, p_data['name'], p_data.get('fide_id'), p_data.get('national_id'), p_data.get('birth_year'), p_data.get('federation'))
-            
+            # print(p_data['name'])
+            # print(player_id)
+            # print("===========================\n\n\n\n====================")
             cursor.execute("""
                 INSERT OR IGNORE INTO player_performances 
                 (player_id, tournament_id, starting_rank, rating_at_tournament, score, final_rank, performance_rating, club_city, rating_change)
@@ -496,17 +579,25 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
             perf_id = cursor.fetchone()[0]
             
             match_key = normalize_player_name_key(p_data['name'])
+            # print(match_key)
+            # print("---")
             perf_map_by_key[match_key] = perf_id
+
+        # print(perf_map_by_key)
 
         scraped_games_map = {}
         for p_data in full_participants_data:
             player_key = normalize_player_name_key(p_data['name'])
             for game in p_data.get('games', []):
                 opponent_key = normalize_player_name_key(game['opponent_name'])
+                # print(player_key)
+                # print(game['opponent_name'])
                 # Ключ - пара игроков. Значение - объект с раундом и доской.
                 game_key = tuple(sorted((player_key, opponent_key)))
                 scraped_games_map[game_key] = {'round': game['round'], 'board': game['board']}
 
+        # print(scraped_games_map)
+        # print("\n=====================\n")
         # 2. Обогащаем и сохраняем партии
         for game_from_pgn in pgn_games:
             white_key = normalize_player_name_key(game_from_pgn['white'])
@@ -514,25 +605,34 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
             
             white_perf_id = perf_map_by_key.get(white_key)
             black_perf_id = perf_map_by_key.get(black_key)
+
+            # print(white_key)
+            # print(white_perf_id)
+            # print(black_key)
+            # print(black_perf_id)
             
             if white_perf_id and black_perf_id:
                 game_key = tuple(sorted((white_key, black_key)))
                 
                 # Ищем обогащенные данные по паре игроков
                 scraped_data = scraped_games_map.get(game_key)
+                # print("SCRAP ")
+                # print(scraped_data)
                 
                 # Используем данные с chess-results как приоритетные
                 final_round = scraped_data.get('round', '?') if scraped_data else game_from_pgn.get('round', '?')
                 final_board = scraped_data.get('board', '?') if scraped_data else '?'
+                # print(final_round + " " + final_board)
+                # print("\n")
                 
-                #pgn_date = game_from_pgn.get('date', '????.??.??').replace('.', '-')
+                pgn_date = game_from_pgn.get('date', '????.??.??').replace('.', '-')
 
                 cursor.execute("""
-                    INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, eco_code, pgn_moves)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, eco_code, pgn_moves, game_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     tournament_id, white_perf_id, black_perf_id, final_round, final_board,
-                    game_from_pgn['result'], game_from_pgn.get('eco'), game_from_pgn['moves']
+                    game_from_pgn['result'], game_from_pgn.get('eco'), game_from_pgn.get('moves'), pgn_date
                 ))
         conn.commit()
         if failed_details_count > 0:

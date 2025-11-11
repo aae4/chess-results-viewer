@@ -1,141 +1,161 @@
 <template>
   <div>
     <v-chip-group v-model="selectedRound" mandatory color="primary" class="mb-4">
-      <v-chip v-for="roundNum in store.roundsList" :key="roundNum" :value="roundNum" filter>
+      <v-chip v-for="roundNum in roundsList" :key="roundNum" :value="roundNum" filter>
         Тур {{ roundNum }}
       </v-chip>
     </v-chip-group>
     
-    <v-card v-if="currentRoundData">
+    <v-card>
       <v-card-title class="text-h5">
         Результаты {{ selectedRound }}-го тура
       </v-card-title>
-      <v-card-subtitle v-if="currentRoundData.byePlayer" class="pb-2">
-        <v-icon size="small" color="grey" class="mr-1">mdi-coffee-outline</v-icon>
-        {{ currentRoundData.byePlayer.name }} пропускает тур.
-      </v-card-subtitle>
       <v-divider></v-divider>
 
-      <!-- === АДАПТИВНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ПРЕДСТАВЛЕНИЯ === -->
-
-      <!-- 1. ПРЕДСТАВЛЕНИЕ ДЛЯ ДЕСКТОПА (большие экраны) -->
-      <v-table v-if="display.mdAndUp.value" class="rounds-table" hover>
-        <thead>
-          <tr>
-            <th class="text-center" style="width: 10%;">Доска</th>
-            <th class="text-right" style="width: 35%;">Белые</th>
-            <th class="text-center" style="width: 15%;">Результат</th>
-            <th class="text-left" style="width: 35%;">Черные</th>
-            <th class="text-center" style="width: 5%;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr 
-            v-for="pairing in currentRoundData.pairings" 
-            :key="pairing.board"
-            @click="goToGame(pairing)"
-            :class="{ 'clickable': pairing.pgn }"
-            class="table-row"
-          >
-            <td class="text-center text-grey">{{ pairing.board }}</td>
-            <td class="text-right">
-              <a href="#" @click.prevent.stop="goToPlayer(pairing.whitePlayer.start_no)" class="player-link" :class="{ 'font-weight-bold': isWinner('white', pairing) }">
-                {{ pairing.white }}
-              </a>
-              <div class="text-caption text-grey">{{ pairing.whitePlayer?.rating }}</div>
-            </td>
-            <td class="text-center">
-              <v-chip label variant="tonal" class="font-weight-bold">{{ formatResult(pairing.result) }}</v-chip>
-            </td>
-            <td class="text-left">
-               <a href="#" @click.prevent.stop="goToPlayer(pairing.blackPlayer.start_no)" class="player-link" :class="{ 'font-weight-bold': isWinner('black', pairing) }">
-                {{ pairing.black }}
-               </a>
-              <div class="text-caption text-grey">{{ pairing.blackPlayer?.rating }}</div>
-            </td>
-            <td class="text-center">
-              <v-icon v-if="pairing.pgn" class="chevron-icon">mdi-chevron-right</v-icon>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-
-      <!-- 2. ПРЕДСТАВЛЕНИЕ ДЛЯ МОБИЛЬНЫХ (маленькие экраны) -->
-      <v-list v-else lines="two" class="mobile-list">
-        <template v-for="(pairing, index) in currentRoundData.pairings" :key="pairing.board">
-          <v-list-item
-            @click="goToGame(pairing)"
-            :disabled="!pairing.pgn"
-          >
-            <!-- Левая часть: Результат -->
-            <template v-slot:prepend>
-              <div class="result-box">
-                <v-chip label variant="tonal" class="font-weight-bold">
-                  {{ formatResult(pairing.result) }}
-                </v-chip>
-              </div>
-            </template>
-            
-            <!-- Основная часть: Игроки -->
-            <div>
-              <div class="d-flex align-baseline mb-1">
-                <v-icon size="x-small" class="mr-2">mdi-circle-outline</v-icon>
-                <div class="player-info">
-                  <span class="player-name" :class="{ 'font-weight-bold': isWinner('white', pairing) }">{{ pairing.white }}</span>
-                  <span class="player-rating text-body-2 text-grey-darken-1 ml-2">({{ pairing.whitePlayer?.rating }})</span>
+      <!-- 1. Состояние ЗАГРУЗКИ -->
+      <div v-if="store.isLoadingDetails" class="text-center pa-10">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+        <div class="text-grey mt-2">Загрузка пар...</div>
+      </div>
+      
+      <!-- 2. Состояние "НЕТ ДАННЫХ" -->
+      <div v-else-if="currentRoundPairings.length === 0" class="text-center text-grey pa-10">
+        <v-icon size="x-large">mdi-magnify-close</v-icon>
+        <div class="mt-4">Нет данных о партиях в этом туре</div>
+      </div>
+      
+      <!-- 3. Состояние КОНТЕНТА -->
+      <div v-else>
+        <!-- Адаптивный переключатель -->
+        <v-table v-if="display.mdAndUp.value" class="rounds-table" hover>
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 10%;">Доска</th>
+              <th class="text-right" style="width: 35%;">Белые</th>
+              <th class="text-center" style="width: 15%;">Результат</th>
+              <th class="text-left" style="width: 35%;">Черные</th>
+              <th class="text-center" style="width: 5%;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="pairing in currentRoundPairings" :key="pairing.id" @click="goToGame(pairing)" :class="{ 'clickable': pairing.pgn_moves }" class="table-row">
+              <td class="text-center text-grey">{{ pairing.board }}</td>
+              <td class="text-right">
+                <a href="#" @click.prevent.stop="goToPlayer(pairing.white_player_id)" class="player-link" :class="{ 'font-weight-bold': isWinner('white', pairing) }">
+                  {{ pairing.white_name }}
+                </a>
+                <div class="text-caption text-grey">{{ pairing.white_rating }}</div>
+              </td>
+              <td class="text-center">
+                <v-chip label variant="tonal" class="font-weight-bold">{{ formatResult(pairing.result) }}</v-chip>
+              </td>
+              <td class="text-left">
+                <a href="#" @click.prevent.stop="goToPlayer(pairing.black_player_id)" class="player-link" :class="{ 'font-weight-bold': isWinner('black', pairing) }">
+                  {{ pairing.black_name }}
+                </a>
+                <div class="text-caption text-grey">{{ pairing.black_rating }}</div>
+              </td>
+              <td class="text-center">
+                <v-icon v-if="pairing.pgn_moves" class="chevron-icon">mdi-chevron-right</v-icon>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+        
+        <v-list v-else lines="two" class="mobile-list">
+          <template v-for="(pairing, index) in currentRoundPairings" :key="pairing.id">
+            <v-list-item @click="goToGame(pairing)" :disabled="!pairing.pgn_moves">
+              <template v-slot:prepend>
+                <div class="result-box">
+                  <v-chip label variant="tonal" class="font-weight-bold">{{ formatResult(pairing.result) }}</v-chip>
+                </div>
+              </template>
+              <div>
+                <div class="d-flex align-baseline mb-1">
+                  <v-icon size="x-small" class="mr-2">mdi-circle-outline</v-icon>
+                  <div class="player-info">
+                    <span class="player-name" :class="{ 'font-weight-bold': isWinner('white', pairing) }">{{ pairing.white_name }}</span>
+                    <span class="player-rating text-body-2 text-grey-darken-1 ml-2">({{ pairing.white_rating }})</span>
+                  </div>
+                </div>
+                <div class="d-flex align-baseline">
+                  <v-icon size="x-small" class="mr-2">mdi-circle</v-icon>
+                  <div class="player-info">
+                    <span class="player-name" :class="{ 'font-weight-bold': isWinner('black', pairing) }">{{ pairing.black_name }}</span>
+                    <span class="player-rating text-body-2 text-grey-darken-1 ml-2">({{ pairing.black_rating }})</span>
+                  </div>
                 </div>
               </div>
-              <div class="d-flex align-baseline">
-                <v-icon size="x-small" class="mr-2">mdi-circle</v-icon>
-                <div class="player-info">
-                  <span class="player-name" :class="{ 'font-weight-bold': isWinner('black', pairing) }">{{ pairing.black }}</span>
-                  <span class="player-rating text-body-2 text-grey-darken-1 ml-2">({{ pairing.blackPlayer?.rating }})</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Правая часть: Индикатор перехода -->
-            <template v-slot:append>
-              <v-icon v-if="pairing.pgn">mdi-chevron-right</v-icon>
-            </template>
-          </v-list-item>
-          <!-- Разделитель между карточками -->
-          <v-divider v-if="index < currentRoundData.pairings.length - 1"></v-divider>
-        </template>
-      </v-list>
+              <template v-slot:append>
+                <v-icon v-if="pairing.pgn_moves">mdi-chevron-right</v-icon>
+              </template>
+            </v-list-item>
+            <v-divider v-if="index < currentRoundPairings.length - 1"></v-divider>
+          </template>
+        </v-list>
+      </div>
     </v-card>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
-import { useTournamentStore } from '@/stores/tournament';
+import { useTournamentStore } from '@/stores/tournamentStore';
 import { formatResult } from '@/utils/formatters';
 
 const store = useTournamentStore();
 const router = useRouter();
+const route = useRoute();
 const display = useDisplay();
 
 const selectedRound = ref(1);
 
-const currentRoundData = computed(() => store.roundsData[selectedRound.value] || null);
+const roundsList = computed(() => {
+  // 1. Приоритетный источник: данные о турнире
+  if (store.activeTournament?.rounds_count > 0) {
+    return Array.from({ length: store.activeTournament.rounds_count }, (_, i) => i + 1);
+  }
+  
+  // 2. Запасной вариант: вычисляем по фактическому количеству партий
+  if (store.games && store.games.length > 0) {
+    const maxRound = Math.max(...store.games.map(g => parseInt(g.round) || 0));
+    if (maxRound > 0) {
+      return Array.from({ length: maxRound }, (_, i) => i + 1);
+    }
+  }
+  
+  // 3. Крайний случай: если данных нет вообще
+  return [1];
+});
 
-const goToPlayer = (startNo) => {
-  if (startNo) {
-    router.push({ name: 'player', params: { start_no: startNo } });
+const currentRoundPairings = computed(() => {
+  if (!store.games) return [];
+  return store.games.filter(g => parseInt(g.round) === selectedRound.value);
+});
+
+// === НОВАЯ ЛОГИКА: Правильная навигация ===
+const goToPlayer = (playerId) => {
+  if (playerId) {
+    router.push({ 
+      name: 'Player', 
+      params: { 
+        tournamentId: route.params.tournamentId,
+        playerId: playerId
+      } 
+    });
   }
 };
 
-const goToGame = (pairing) => {
-  if (!pairing.pgn) return;
-  const gameId = `${pairing.round}-${pairing.board}`;
-  router.push({ name: 'game', params: { id: gameId } });
+const goToGame = (game) => {
+  if (!game.pgn_moves) return;
+  router.push({ name: 'Game', params: { gameId: game.id } });
 };
 
-const isWinner = (color, pairing) => {
-  const result = formatResult(pairing.result);
+const isWinner = (color, game) => {
+  const result = formatResult(game.result);
+
   if (color === 'white' && result === '1-0') return true;
   if (color === 'black' && result === '0-1') return true;
   return false;

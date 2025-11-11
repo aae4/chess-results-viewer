@@ -2,41 +2,36 @@
   <v-data-table
     :headers="standingsHeaders"
     :items="store.standings"
-    item-value="name"
+    item-value="player_id"
     class="leaderboard-table"
     :items-per-page="-1"
+    :loading="store.isLoadingDetails"
+    loading-text="Загрузка итоговой таблицы..."
   >
+    <template v-slot:no-data></template>
+    
     <template v-slot:item="{ item }">
-      <tr :class="getRankClass(item.details?.место)" @click="goToPlayer(item.start_no)">
+      <!-- Используем новые, "плоские" поля из store.standings -->
+      <tr :class="getRankClass(item.final_rank)" @click="goToPlayer(item.player_id)">
         <td class="text-center rank-col">
           <div class="rank-circle">
-            <v-icon v-if="item.details?.место <= 3" :color="getRankColor(item.details?.место)">mdi-trophy</v-icon>
-            <span v-else class="text-h6 font-weight-light text-grey">{{ item.details?.место }}</span>
+            <v-icon v-if="item.final_rank <= 3" :color="getRankColor(item.final_rank)">mdi-trophy</v-icon>
+            <span v-else class="text-h6 font-weight-light text-grey">{{ item.final_rank }}</span>
           </div>
         </td>
         <td>
           <div class="d-flex align-center py-2">
-            <v-avatar :color="getAvatarColor(item.details?.место)" size="40" class="mr-4">
+            <v-avatar :color="getAvatarColor(item.final_rank)" size="40" class="mr-4">
               <span class="text-white text-caption font-weight-bold">{{ getInitials(item.name) }}</span>
             </v-avatar>
             <div>
               <div class="font-weight-bold text-subtitle-1">{{ item.name }}</div>
-              <div class="text-caption text-grey">Рейтинг: {{ item.rating }}</div>
+              <div class="text-caption text-grey">Рейтинг: {{ item.rating_at_tournament }}</div>
             </div>
           </div>
         </td>
-        <td class="text-center points-col font-weight-bold text-h6">{{ item.details?.очки }}</td>
-        <td class="text-center perf-col text-body-1 text-grey-darken-1">{{ item.details?.рейтинговый_перфоманс }}</td>
-        <td class="text-center form-col">
-          <v-chip
-            v-for="(result, index) in playerForm[item.start_no]"
-            :key="index"
-            :color="result.color"
-            size="x-small"
-            class="mx-1"
-            variant="elevated"
-          ></v-chip>
-        </td>
+        <td class="text-center points-col font-weight-bold text-h6">{{ item.score }}</td>
+        <td class="text-center perf-col text-body-1 text-grey-darken-1">{{ item.performance_rating }}</td>
       </tr>
     </template>
     <template v-slot:bottom></template>
@@ -44,42 +39,31 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useTournamentStore } from '@/stores/tournament';
-import { getPointsFromResult, getInitials } from '@/utils/formatters';
+import { useRoute, useRouter } from 'vue-router';
+import { useTournamentStore } from '@/stores/tournamentStore';
+import { getInitials } from '@/utils/formatters';
 
 const store = useTournamentStore();
 const router = useRouter();
+const route = useRoute();
 
-const goToPlayer = (startNo) => {
-  router.push({ name: 'player', params: { start_no: startNo } });
+// === ИЗМЕНЕНИЕ: Правильная навигация ===
+const goToPlayer = (playerId) => {
+  router.push({ 
+    name: 'Player', 
+    params: { 
+      tournamentId: route.params.tournamentId,
+      playerId: playerId 
+    } 
+  });
 };
 
 const standingsHeaders = [
-  { title: 'Место', key: 'details.место', align: 'center', sortable: false, width: '100px' },
-  { title: 'Игрок', key: 'name', sortable: false, align: 'start' },
-  { title: 'Очки', key: 'details.очки', align: 'center', sortable: false, width: '120px' },
-  { title: 'Перфоманс', key: 'details.рейтинговый_перфоманс', align: 'center', sortable: false, width: '150px' },
-  { title: 'Форма', key: 'form', align: 'center', sortable: false, width: '200px' },
+  { title: 'Место', key: 'final_rank', align: 'center', sortable: true, width: '100px' },
+  { title: 'Игрок', key: 'name', sortable: true, align: 'start' },
+  { title: 'Очки', key: 'score', align: 'center', sortable: true, width: '120px' },
+  { title: 'Перфоманс', key: 'performance_rating', align: 'center', sortable: true, width: '150px' },
 ];
-
-const playerForm = computed(() => {
-  const formMap = {};
-  store.players.forEach(player => {
-    formMap[player.start_no] = [...player.games]
-      .filter(g => g.opponent_name !== 'bye' && g.result.trim() !== '')
-      .sort((a, b) => parseInt(b.round) - parseInt(a.round))
-      .slice(0, 5)
-      .map(game => {
-        const points = getPointsFromResult(game.result);
-        return {
-          color: points === 1 ? 'success' : points === 0.5 ? 'grey' : 'error'
-        };
-      });
-  });
-  return formMap;
-});
 
 const getAvatarColor = (rank) => {
   if (rank == 1) return 'amber-darken-2';
@@ -106,31 +90,17 @@ const getRankColor = (rank) => {
 </script>
 
 <style scoped>
-/* Все стили .leaderboard-table и т.д. из App.vue переносятся сюда */
+/* Стили остаются без изменений */
 .leaderboard-table .v-data-table__th {
   text-transform: uppercase;
   font-size: 0.75rem !important;
   color: rgba(var(--v-theme-on-surface), 0.6) !important;
 }
-
-.leaderboard-table tr {
-  cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
-}
-.leaderboard-table tr:hover {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-}
+.leaderboard-table tr { cursor: pointer; transition: background-color 0.15s ease-in-out; }
+.leaderboard-table tr:hover { background-color: rgba(var(--v-theme-primary), 0.04); }
 .leaderboard-table .rank-gold { background-color: rgba(255, 215, 0, 0.07); }
 .leaderboard-table .rank-silver { background-color: rgba(192, 192, 192, 0.07); }
 .leaderboard-table .rank-bronze { background-color: rgba(205, 127, 50, 0.07); }
-
-.rank-circle {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: auto;
-}
+.rank-circle { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin: auto; }
 .rank-circle .v-icon { font-size: 24px; }
 </style>
