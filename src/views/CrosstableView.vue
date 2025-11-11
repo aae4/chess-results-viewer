@@ -55,87 +55,27 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useTournamentStore } from '@/stores/tournamentStore';
-import { getPointsFromResult, formatPlayerResult, getColorIcon, getResultSymbol } from '@/utils/formatters';
+import { getColorIcon, getResultSymbol } from '@/utils/formatters';
+import { buildCrosstable } from '@/utils/builders'; // <-- ИМПОРТ
 
 const store = useTournamentStore();
 const router = useRouter();
 const route = useRoute();
 
-// const roundsList = computed(() => {
-//   if (!store.activeTournament?.rounds_count) return [];
-//   return Array.from({ length: store.activeTournament.rounds_count }, (_, i) => i + 1);
-// });
-
 const roundsList = computed(() => {
-  // 1. Приоритетный источник: данные о турнире
   if (store.activeTournament?.rounds_count > 0) {
     return Array.from({ length: store.activeTournament.rounds_count }, (_, i) => i + 1);
   }
-  
-  // 2. Запасной вариант: вычисляем по фактическому количеству партий
-  if (store.games && store.games.length > 0) {
+  if (store.games?.length > 0) {
     const maxRound = Math.max(...store.games.map(g => parseInt(g.round) || 0));
-    if (maxRound > 0) {
-      return Array.from({ length: maxRound }, (_, i) => i + 1);
-    }
+    return maxRound > 0 ? Array.from({ length: maxRound }, (_, i) => i + 1) : [1];
   }
-  
-  // 3. Крайний случай: если данных нет вообще
   return [1];
 });
 
+
 const crosstable = computed(() => {
-  if (!store.crosstableData.length) return [];
-
-  const playersMap = new Map();
-  
-  // 1. Создаем карту всех участников для быстрого доступа
-  const roundsCount = Math.max(...store.games.map(g => parseInt(g.round) || 0))
-  store.crosstableData.forEach(game => {
-    if (!playersMap.has(game.player_id)) {
-      playersMap.set(game.player_id, {
-        player_id: game.player_id,
-        player_name: game.player_name,
-        starting_rank: game.starting_rank,
-        results: new Array(roundsCount).fill(null), // Создаем пустой массив нужной длины
-        totalPoints: 0,
-      });
-    }
-  });
-
-  // 2. Заполняем результаты игр
-  store.crosstableData.forEach(game => {
-    if (!game.round) return; // Пропускаем, если это не игра
-
-    const playerEntry = playersMap.get(game.player_id);
-    const roundIndex = parseInt(game.round) - 1;
-
-    //const points = getPointsFromResult(game.result);
-    const points = getPointsFromResult(formatPlayerResult(game.result, game.color))
-    if (points !== null) {
-      playerEntry.totalPoints += points;
-    }
-    
-    // Ищем стартовый номер оппонента для отображения
-    const opponent = playersMap.get(game.opponent_player_id);
-
-    playerEntry.results[roundIndex] = {
-      points: points,
-      color: game.color,
-      opponent_name: game.opponent_name,
-      opponent_starting_rank: opponent?.starting_rank || '?',
-      game_id: game.game_id 
-    };
-  });
-
-  // 3. Конвертируем карту в массив и сортируем
-  const result = Array.from(playersMap.values());
-  return result.sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) {
-      return b.totalPoints - a.totalPoints;
-    }
-    return a.starting_rank - b.starting_rank;
-  });
+  return buildCrosstable(store.crosstableData, roundsList.value.length);
 });
 
 const goToPlayer = (playerId) => {

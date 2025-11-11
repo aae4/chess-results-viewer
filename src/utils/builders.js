@@ -1,56 +1,65 @@
-import { getPointsFromResult } from './formatters';
+// src/utils/builders.js
+import { getPointsFromResult, formatPlayerResult } from './formatters';
 
 /**
- * Строит структуру данных для кросс-таблицы на основе списка игроков и туров.
- * Эта функция является "чистой" - она не зависит от реактивности и не изменяет внешние данные.
- * @param {Array} players - Массив объектов игроков.
- * @param {Array} roundsList - Массив номеров туров ( [1, 2, 3...] ).
- * @returns {Array} - Отсортированный массив данных для кросс-таблицы.
+ * Строит структуру данных для кросс-таблицы на основе "сырых" данных из БД.
+ * @param {Array} rawData - Результат запроса dbService.getDataForCrosstable.
+ * @param {number} roundsCount - Общее количество туров в турнире.
+ * @returns {Array} - Отсортированный массив данных для отображения.
  */
-export function buildCrosstableData(players, roundsList) {
-  if (!players || players.length === 0) return [];
+export function buildCrosstable(rawData, roundsCount) {
+  if (!rawData || rawData.length === 0) return [];
 
-  const crosstable = players.map(player => {
-    const playerResults = {
-      name: player.name,
-      start_no: player.start_no,
-      results: [],
-      totalPoints: 0,
-    };
-    let totalPoints = 0;
+  const playersMap = new Map();
 
-    // Итерируемся по номерам туров, чтобы гарантировать правильную длину массива results
-    for (let i = 0; i < roundsList.length; i++) {
-      const roundNum = roundsList[i];
-      const game = player.games.find(g => parseInt(g.round) === roundNum);
-
-      if (game && game.result !== undefined && game.result.trim() !== '' && game.opponent_start_no) {
-        const points = getPointsFromResult(game.result);
-        if (points !== null) {
-          totalPoints += points;
-        }
-        
-        const opponent = players.find(p => p.start_no === game.opponent_start_no);
-
-        // Помещаем результат в массив по индексу (roundNum - 1)
-        playerResults.results[roundNum - 1] = {
-          points: points,
-          color: game.color,
-          opponent_start_no: game.opponent_start_no,
-          opponent_name: opponent?.name || game.opponent_name,
-          board: game.board,
-        };
-      } else {
-        // Если игры нет, вставляем null, чтобы сохранить порядок
-        playerResults.results[roundNum - 1] = null;
-      }
+  // 1. Группируем все данные по игрокам
+  rawData.forEach(row => {
+    if (!playersMap.has(row.player_id)) {
+      playersMap.set(row.player_id, {
+        player_id: row.player_id,
+        player_name: row.player_name,
+        starting_rank: row.starting_rank,
+        results: new Array(roundsCount).fill(null),
+        games: [],
+        totalPoints: 0,
+      });
     }
-    playerResults.totalPoints = totalPoints;
-    return playerResults;
+    playersMap.get(row.player_id).games.push(row);
+  });
+  
+  // 2. Обрабатываем игры для каждого игрока
+  playersMap.forEach(player => {
+    let totalPoints = 0;
+    player.games.forEach(game => {
+      if (!game.round || !game.opponent_player_id) return;
+      
+      const roundIndex = parseInt(game.round) - 1;
+      const points = getPointsFromResult(formatPlayerResult(game.result, game.color));
+      
+      if (points !== null) {
+        totalPoints += points;
+      }
+      
+      // Находим стартовый номер оппонента (он уже есть в playersMap)
+      const opponent = playersMap.get(game.opponent_player_id);
+      
+      player.results[roundIndex] = {
+        points: points,
+        color: game.color,
+        opponent_name: game.opponent_name,
+        opponent_starting_rank: opponent?.starting_rank || '?',
+        game_id: game.game_id
+      };
+    });
+    player.totalPoints = totalPoints;
   });
 
-  // Сортируем итоговый массив
-  return crosstable.sort((a, b) => 
-    b.totalPoints - a.totalPoints || parseInt(a.start_no, 10) - parseInt(b.start_no, 10)
-  );
+  // 3. Конвертируем карту в массив и сортируем
+  const result = Array.from(playersMap.values());
+  return result.sort((a, b) => {
+    if (b.totalPoints !== a.totalPoints) {
+      return b.totalPoints - a.totalPoints;
+    }
+    return a.starting_rank - b.starting_rank;
+  });
 }
