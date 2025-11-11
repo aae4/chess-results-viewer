@@ -128,144 +128,18 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTournamentStore } from '@/stores/tournamentStore';
-import { formatResult } from '@/utils/formatters';
-import { historyToPgnString } from '@/utils/pgn';
-import { Chess } from 'chess.js';
-// import { getEcoDatabase } from '@/services/ecoDatabase';
+import { calculateTournamentStatistics } from '@/utils/statisticsCalculator';
 
 const store = useTournamentStore();
 const router = useRouter();
 
-const stats = computed(() => {
-  const players = store.participants;
-  const games = store.statisticsData; // Используем специальный набор данных для статистики
-  const standings = store.standings;
-
-  if (!players.length || !games.length || !standings.length) return null;
-
-  const totalPlayers = players.length;
-  const totalRounds = store.activeTournament?.rounds_count || 0;
-  const averageRating = Math.round(players.reduce((sum, p) => sum + (p.rating || 0), 0) / players.length);
-
-  let whiteWins = 0, blackWins = 0, draws = 0;
-  let shortestGame = { moves: Infinity, game: null };
-  let longestGame = { moves: 0, game: null };
-  let totalMoves = 0;
-  let gamesWithPgnCount = 0;
-  const openingStats = {};
-  const playerDrawCounts = {};
-  let totalCastles = 0;
-  let totalPromotions = 0;
-
-  games.forEach(game => {
-    const result = formatResult(game.result);
-    if (result === '1-0') whiteWins++;
-    else if (result === '0-1') blackWins++;
-    else if (result === '½-½') {
-      draws++;
-      // Считаем ничьи для каждого игрока
-      playerDrawCounts[game.white_player_id] = (playerDrawCounts[game.white_player_id] || 0) + 1;
-      playerDrawCounts[game.black_player_id] = (playerDrawCounts[game.black_player_id] || 0) + 1;
-    }
-
-    if (game.pgn_moves) {
-      const chess = new Chess();
-      chess.loadPgn(game.pgn_moves);
-      const history = chess.history();
-      try {
-        const chess = new Chess();
-        chess.loadPgn(game.pgn_moves);
-        const moveCount = chess.history().length / 2;
-        if (moveCount > 0) {
-          gamesWithPgnCount++;
-          totalMoves += moveCount;
-          if (moveCount < shortestGame.moves) shortestGame = { moves: Math.ceil(moveCount), game };
-          if (moveCount > longestGame.moves) longestGame = { moves: Math.ceil(moveCount), game };
-        }
-      } catch (e) { /* ignore pgn errors */ }
-
-      history.forEach(move => {
-          if (move === 'O-O' || move === 'O-O-O') totalCastles++;
-          if (move.includes('=')) totalPromotions++;
-      });
-      if (game.pgn_moves && store.ecoDatabase) {
-        try {
-          let foundOpening = null;
-
-          for (let i = Math.min(history.length, 20); i > 0; i--) { // Ищем не глубже 10 ходов (20 полуходов)
-            const pgnStr = historyToPgnString(history.slice(0, i)); 
-            if (store.ecoDatabase[pgnStr]) {
-              foundOpening = store.ecoDatabase[pgnStr];
-              break;
-            }
-          }
-
-          if (foundOpening) {
-            const key = foundOpening.e;
-            if (!openingStats[key]) {
-              openingStats[key] = { eco: key, name: foundOpening.n, count: 0, white: 0, draw: 0, black: 0 };
-            }
-            openingStats[key].count++;
-            if (result === '1-0') openingStats[key].white++;
-            else if (result === '0-1') openingStats[key].black++;
-            else if (result === '½-½') openingStats[key].draw++;
-          }
-        } catch (e) { /* Игнорируем ошибки парсинга PGN */ }
-      }
-    }
-  });
-
-  const totalGames = whiteWins + blackWins + draws;
-  const resultDistribution = {
-    whiteWins, blackWins, draws,
-    whiteWinPercent: totalGames > 0 ? Math.round((whiteWins / totalGames) * 100) : 0,
-    blackWinPercent: totalGames > 0 ? Math.round((blackWins / totalGames) * 100) : 0,
-    drawPercent: totalGames > 0 ? Math.round((draws / totalGames) * 100) : 0,
-  };
-
-  const mostDecisivePlayer = players
-    .map(p => {
-        const playedGames = games.filter(g => g.white_player_id === p.id || g.black_player_id === p.id).length;
-        const drawsCount = playerDrawCounts[p.id] || 0;
-        return { player: p, drawRate: playedGames > 0 ? (drawsCount / playedGames) * 100 : 100 };
-    })
-    .sort((a, b) => a.drawRate - b.drawRate)[0];
-
-  const biggestOverperformer = standings
-    .filter(p => p.performance_rating && p.rating_at_tournament)
-    .map(p => ({ player: p, diff: p.performance_rating - p.rating_at_tournament }))
-    .sort((a, b) => b.diff - a.diff)[0];
-
-  const undefeatedPlayers = standings.filter(p => {
-    const playerGames = games.filter(g => g.white_player_id === p.player_id || g.black_player_id === p.player_id);
-    return !playerGames.some(g => {
-      const result = formatResult(g.result);
-      if (g.white_player_id === p.player_id && result === '0-1') return true;
-      if (g.black_player_id === p.player_id && result === '1-0') return true;
-      return false;
-    });
-  });
-
-  const topOpenings = Object.values(openingStats)
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, 10);
-
-  return {
-    totalPlayers,
-    totalRounds,
-    averageRating,
-    resultDistribution,
-    shortestGame,
-    longestGame,
-    averageMoveCount: gamesWithPgnCount > 0 ? Math.round(totalMoves / gamesWithPgnCount) : 0,
-    biggestOverperformer,
-    undefeatedPlayers,
-    mostDecisivePlayer,
-    topOpenings,
-    totalCastles,
-    totalPromotions,
-  };
-});
+const stats = computed(() => calculateTournamentStatistics({
+  participants: store.participants,
+  gamesForStats: store.statisticsData,
+  standings: store.standings,
+  tournamentDetails: store.activeTournament,
+  ecoDatabase: store.ecoDatabase,
+}));
 
 const openingsHeaders = [
   { title: 'Дебют', key: 'name', sortable: false, align: 'start' },
