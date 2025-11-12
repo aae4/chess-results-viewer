@@ -224,7 +224,8 @@ export const dbService = {
     ORDER BY t.start_date ASC
   `, [playerId]),
 
-  /** Получить всех игроков с агрегированной статистикой (последний рейтинг, кол-во турниров) */
+  /** Получить всех игроков с агрегированной статистикой (последний рейтинг, кол-во турниров) 
+   * TODO: проверить что не используется и удалить*/
   getAllPlayersWithStats: () => query(`
     SELECT
       p.id,
@@ -245,4 +246,122 @@ export const dbService = {
       ) as latest_rating
     FROM players p
   `),
+
+  /** Получить всех игроков с агрегированной статистикой (оптимизированный запрос) */
+  getAllPlayersWithStatsOptimized: () => query(`
+    WITH LatestRating AS (
+      -- Сначала находим последний рейтинг для каждого игрока с помощью оконной функции
+      SELECT
+        perf.player_id,
+        perf.rating_at_tournament,
+        -- Нумеруем турниры каждого игрока в порядке убывания даты
+        ROW_NUMBER() OVER(PARTITION BY perf.player_id ORDER BY t.start_date DESC) as rn
+      FROM player_performances perf
+      JOIN tournaments t ON t.id = perf.tournament_id
+      WHERE perf.rating_at_tournament IS NOT NULL
+    )
+    SELECT
+      p.id,
+      p.canonical_name,
+      p.federation,
+      -- Считаем турниры через LEFT JOIN и GROUP BY
+      COUNT(DISTINCT pp.tournament_id) as tournament_count,
+      -- Подключаем последний рейтинг, который мы уже нашли
+      lr.rating_at_tournament as latest_rating
+    FROM players p
+    -- Присоединяем все выступления, чтобы посчитать их
+    LEFT JOIN player_performances pp ON pp.player_id = p.id
+    -- Присоединяем только последнее выступление (с rn = 1) для получения рейтинга
+    LEFT JOIN LatestRating lr ON lr.player_id = p.id AND lr.rn = 1
+    -- Группируем по игроку, чтобы агрегирующие функции (COUNT) работали корректно
+    GROUP BY p.id, p.canonical_name, p.federation, lr.rating_at_tournament
+  `),
+
+  /** Получить статистику результативности против оппонентов разной силы */
+  getPlayerOpponentStats: (playerId) => query(`
+    WITH GameRatings AS (
+      SELECT
+        g.result,
+        CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as player_color,
+        wpf.rating_at_tournament as white_rating,
+        bpf.rating_at_tournament as black_rating
+      FROM games g
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
+    )
+    SELECT
+      CASE
+        WHEN (player_color = 'w' AND white_rating > black_rating + 25) OR (player_color = 'b' AND black_rating > white_rating + 25) THEN 'vs_weaker'
+        WHEN (player_color = 'w' AND white_rating < black_rating - 25) OR (player_color = 'b' AND black_rating < white_rating - 25) THEN 'vs_stronger'
+        ELSE 'vs_equal'
+      END as opponent_category,
+      SUM(CASE WHEN (player_color = 'w' AND result = '1-0') OR (player_color = 'b' AND result = '0-1') THEN 1 ELSE 0 END) as wins,
+      SUM(CASE WHEN result = '½-½' THEN 1 ELSE 0 END) as draws,
+      SUM(CASE WHEN (player_color = 'w' AND result = '0-1') OR (player_color = 'b' AND result = '1-0') THEN 1 ELSE 0 END) as losses
+    FROM GameRatings
+    GROUP BY opponent_category
+  `, [playerId, playerId, playerId]),
+  
+  /** Получить статистику по дебютам за всю карьеру */
+  getPlayerOpeningStats: (playerId) => query(`
+    SELECT
+      g.eco_code,
+      CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as player_color,
+      COUNT(*) as games_count,
+      SUM(CASE WHEN g.result = '½-½' THEN 1 ELSE 0 END) as draws,
+      SUM(CASE 
+        WHEN (wpf.player_id = ? AND g.result = '1-0') OR (bpf.player_id = ? AND g.result = '0-1') THEN 1 
+        ELSE 0 
+      END) as wins
+    FROM games g
+    JOIN player_performances wpf ON wpf.id = g.white_performance_id
+    JOIN player_performances bpf ON bpf.id = g.black_performance_id
+    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.eco_code IS NOT NULL
+    GROUP BY g.eco_code, player_color
+  `, [playerId, playerId, playerId, playerId, playerId]),
+
+  /** Получить статистику H2H против всех соперников */
+  getPlayerHeadToHead: (playerId) => query(`
+    SELECT
+      CASE WHEN wpf.player_id = ? THEN bp.id ELSE wp.id END as opponent_id,
+      CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
+      COUNT(*) as total_games,
+      SUM(CASE WHEN (wpf.player_id = ? AND g.result = '1-0') OR (bpf.player_id = ? AND g.result = '0-1') THEN 1 ELSE 0 END) as wins,
+      SUM(CASE WHEN g.result = '½-½' THEN 1 ELSE 0 END) as draws,
+      SUM(CASE WHEN (wpf.player_id = ? AND g.result = '0-1') OR (bpf.player_id = ? AND g.result = '1-0') THEN 1 ELSE 0 END) as losses
+    FROM games g
+    JOIN player_performances wpf ON wpf.id = g.white_performance_id
+    JOIN players wp ON wp.id = wpf.player_id
+    JOIN player_performances bpf ON bpf.id = g.black_performance_id
+    JOIN players bp ON bp.id = bpf.player_id
+    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
+    GROUP BY opponent_id, opponent_name
+    ORDER BY total_games DESC, opponent_name ASC
+  `, [
+    playerId, playerId, playerId, playerId, 
+    playerId, playerId, playerId, playerId
+  ]),
+
+  /**
+   * Получить все игры игрока с детальной информацией для глубокой аналитики.
+   */
+  getPlayerGamesForAnalytics: (playerId) => query(`
+    SELECT
+      g.id as game_id,
+      t.id as tournament_id, -- <-- ДОБАВЛЕНО ЭТО ПОЛЕ
+      g.result,
+      CAST(g.round AS INTEGER) as round,
+      t.rounds_count,
+      CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as player_color,
+      CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating,
+      CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name
+    FROM games g
+    JOIN player_performances wpf ON wpf.id = g.white_performance_id
+    JOIN players wp ON wp.id = wpf.player_id
+    JOIN player_performances bpf ON bpf.id = g.black_performance_id
+    JOIN players bp ON bp.id = bpf.player_id
+    JOIN tournaments t ON t.id = g.tournament_id
+    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
+  `, [playerId, playerId, playerId, playerId, playerId]),
 };

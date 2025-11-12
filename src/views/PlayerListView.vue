@@ -1,56 +1,70 @@
 <template>
   <div>
-    <!-- 1. ПАНЕЛЬ ФИЛЬТРОВ И УПРАВЛЕНИЯ -->
+    <!-- ПАНЕЛЬ ФИЛЬТРОВ -->
     <v-card class="mb-6">
-      <v-card-text>
-        <v-row align="center" dense>
-          <v-col cols="12" md="4">
-            <v-text-field
-              v-model="searchQuery"
-              label="Поиск по имени..."
-              prepend-inner-icon="mdi-magnify"
-              hide-details
-              clearable
-            ></v-text-field>
-          </v-col>
-          <v-col cols="12" sm="6" md="3">
-            <v-select
-              v-model="selectedFederation"
-              :items="availableFederations"
-              label="Федерация"
-              hide-details
-              clearable
-            ></v-select>
-          </v-col>
-          <v-col cols="12" sm="6" md="5">
-             <v-range-slider
-              v-model="ratingRange"
-              :min="minRating"
-              :max="maxRating"
-              label="Рейтинг"
-              :step="50"
-              thumb-label="always"
-              hide-details
-              class="pt-5"
-            ></v-range-slider>
-          </v-col>
-        </v-row>
-        <v-row dense class="mt-2">
-          <v-col class="d-flex align-center">
-            <span class="text-caption text-medium-emphasis mr-4">Сортировать по:</span>
-            <v-btn-toggle v-model="sortBy" color="primary" variant="outlined" mandatory density="compact">
-              <v-btn value="name">Имени</v-btn>
-              <v-btn value="rating">Рейтингу</v-btn>
-              <v-btn value="tournaments">Опыту</v-btn>
-            </v-btn-toggle>
-          </v-col>
-        </v-row>
-      </v-card-text>
+      <v-expansion-panels variant="accordion">
+        <v-expansion-panel elevation="0">
+          <v-expansion-panel-title>
+            <v-icon start>mdi-filter-variant</v-icon>
+            Фильтры и сортировка
+          </v-expansion-panel-title>
+          <v-expansion-panel-text class="pt-4">
+            <v-row align="center" dense>
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="searchQuery"
+                  label="Поиск по имени..."
+                  prepend-inner-icon="mdi-magnify"
+                  hide-details
+                  clearable
+                  density="compact"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="selectedFederation"
+                  :items="availableFederations"
+                  label="Федерация"
+                  hide-details
+                  clearable
+                  density="compact"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" sm="6" md="5">
+                 <v-range-slider
+                  v-model="ratingRange"
+                  :min="1000"
+                  :max="3000"
+                  label="Рейтинг"
+                  :step="50"
+                  thumb-label="always"
+                  hide-details
+                  class="pt-5"
+                ></v-range-slider>
+              </v-col>
+            </v-row>
+            <v-row dense class="mt-4">
+              <v-col class="d-flex align-center flex-wrap">
+                <span class="text-caption text-medium-emphasis mr-4">Сортировать по:</span>
+                <v-btn-toggle v-model="sortBy" color="primary" variant="outlined" mandatory density="compact">
+                  <v-btn value="name">Имени</v-btn>
+                  <v-btn value="rating">Рейтингу</v-btn>
+                  <v-btn value="tournaments">Опыту</v-btn>
+                </v-btn-toggle>
+              </v-col>
+            </v-row>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </v-card>
 
-    <!-- 2. СОСТОЯНИЯ ЗАГРУЗКИ, ОШИБКИ, НЕТ ДАННЫХ -->
-    <div v-if="store.isLoadingList" class="text-center pa-10">
-      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+    <!-- СОСТОЯНИЯ ЗАГРУЗКИ, ОШИБКИ, НЕТ ДАННЫХ -->
+    <div v-if="store.isLoadingList">
+       <v-row>
+          <v-col v-for="n in 12" :key="n" cols="12" sm="6" md="4">
+            <v-skeleton-loader type="card"></v-skeleton-loader>
+          </v-col>
+        </v-row>
     </div>
     <v-alert v-else-if="store.errorList" type="error" prominent>
       Не удалось загрузить список игроков: {{ store.errorList }}
@@ -64,11 +78,7 @@
     <!-- 3. ОСНОВНОЙ СПИСОК С КАРТОЧКАМИ ИГРОКОВ -->
     <div v-else>
       <v-row>
-        <v-col
-          v-for="player in paginatedPlayers"
-          :key="player.id"
-          cols="12" sm="6" md="4"
-        >
+        <v-col v-for="player in paginatedPlayers" :key="player.id" cols="12" sm="6" md="4">
           <v-card 
             class="player-card h-100"
             :to="{ name: 'GlobalPlayer', params: { playerId: player.id } }"
@@ -97,7 +107,7 @@
         </v-col>
       </v-row>
       
-      <!-- 4. ПАГИНАЦИЯ -->
+      <!-- ПАГИНАЦИЯ -->
       <v-pagination
         v-if="totalPages > 1"
         v-model="currentPage"
@@ -116,28 +126,17 @@ import { getInitials } from '@/utils/formatters';
 
 const store = usePlayerStore();
 
-// --- Состояние фильтров ---
 const searchQuery = ref('');
 const selectedFederation = ref(null);
-const sortBy = ref('name'); // 'name', 'rating', 'tournaments'
+const sortBy = ref('name');
 const currentPage = ref(1);
 const itemsPerPage = 12;
-
-// --- Состояние для слайдера рейтинга ---
-const ratingRange = ref([0, 3000]);
-const minRating = computed(() => Math.min(...store.playerList.map(p => p.latest_rating || 0).filter(r => r > 0)));
-const maxRating = computed(() => Math.max(...store.playerList.map(p => p.latest_rating || 3000)));
-watch(() => store.playerList, (newList) => {
-  if(newList.length > 0) {
-    ratingRange.value = [minRating.value, maxRating.value];
-  }
-});
+const ratingRange = ref([1000, 3000]);
 
 onMounted(() => {
   store.fetchAllPlayers();
 });
 
-// --- Computed свойства для фильтрации и пагинации ---
 const availableFederations = computed(() => {
   if (!store.playerList) return [];
   const federations = new Set(store.playerList.map(p => p.federation).filter(Boolean));
@@ -147,15 +146,14 @@ const availableFederations = computed(() => {
 const filteredAndSortedPlayers = computed(() => {
   if (!store.playerList) return [];
   
-  // 1. Фильтрация
   const filtered = store.playerList.filter(player => {
     const nameMatch = player.canonical_name.toLowerCase().includes(searchQuery.value?.toLowerCase() || '');
     const federationMatch = !selectedFederation.value || player.federation === selectedFederation.value;
-    const ratingMatch = (player.latest_rating || 0) >= ratingRange.value[0] && (player.latest_rating || 0) <= ratingRange.value[1];
+    const rating = player.latest_rating || 0;
+    const ratingMatch = rating === 0 ? ratingRange.value[0] === 1000 : (rating >= ratingRange.value[0] && rating <= ratingRange.value[1]);
     return nameMatch && federationMatch && ratingMatch;
   });
   
-  // 2. Сортировка
   return filtered.sort((a, b) => {
     if (sortBy.value === 'rating') {
       return (b.latest_rating || 0) - (a.latest_rating || 0);
@@ -163,7 +161,6 @@ const filteredAndSortedPlayers = computed(() => {
     if (sortBy.value === 'tournaments') {
       return (b.tournament_count || 0) - (a.tournament_count || 0);
     }
-    // по умолчанию - по имени
     return a.canonical_name.localeCompare(b.canonical_name);
   });
 });
@@ -185,7 +182,6 @@ const paginatedPlayers = computed(() => {
   transition: all 0.2s ease-in-out;
 }
 .player-card:hover {
-  border-color: rgba(var(--v-theme-primary-rgb), 0.6) !important;
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }

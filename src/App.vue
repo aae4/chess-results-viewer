@@ -84,7 +84,7 @@ const goHome = () => router.push({ name: 'TournamentsList' });
 
 // Показываем кнопку "Назад" на мобильных, если это страница игрока или партии
 const showBackButton = computed(() => {
-  return display.smAndDown.value && ['Player', 'Game'].includes(route.name);
+  return display.smAndDown.value && ['Player', 'Game', 'GlobalPlayer'].includes(route.name);
 });
 
 
@@ -103,6 +103,8 @@ const currentTitle = computed(() => {
       return store.activePlayer?.canonical_name || 'Профиль игрока';
     case 'Game':
       return `Партия: ${store.activeGame?.white_name || ''} - ${store.activeGame?.black_name || ''}`;
+    case 'GlobalPlayer': 
+      return store.playerProfile?.canonical_name || 'Профиль игрока';
     default:
       return 'Chess Results Viewer';
   }
