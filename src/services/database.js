@@ -201,4 +201,48 @@ export const dbService = {
     JOIN players bp ON bp.id = bpf.player_id
     WHERE g.tournament_id = ?
   `, [tournamentId]),
+
+  /** Получить основную информацию об игроке по его ID */
+  getPlayerGlobalProfile: (playerId) => query(`
+    SELECT id, canonical_name, fide_id, federation FROM players WHERE id = ?
+  `, [playerId]).then(res => res[0]),
+
+  /** Получить всю турнирную историю игрока */
+  getPlayerCareer: (playerId) => query(`
+    SELECT
+      t.id as tournament_id,
+      t.name as tournament_name,
+      t.start_date,
+      perf.final_rank,
+      perf.score,
+      perf.performance_rating,
+      perf.rating_at_tournament,
+      perf.rating_change
+    FROM player_performances perf
+    JOIN tournaments t ON t.id = perf.tournament_id
+    WHERE perf.player_id = ?
+    ORDER BY t.start_date ASC
+  `, [playerId]),
+
+  /** Получить всех игроков с агрегированной статистикой (последний рейтинг, кол-во турниров) */
+  getAllPlayersWithStats: () => query(`
+    SELECT
+      p.id,
+      p.canonical_name,
+      p.federation,
+      (
+        SELECT COUNT(perf.tournament_id)
+        FROM player_performances perf
+        WHERE perf.player_id = p.id
+      ) as tournament_count,
+      (
+        SELECT perf.rating_at_tournament
+        FROM player_performances perf
+        JOIN tournaments t ON t.id = perf.tournament_id
+        WHERE perf.player_id = p.id AND perf.rating_at_tournament IS NOT NULL
+        ORDER BY t.start_date DESC
+        LIMIT 1
+      ) as latest_rating
+    FROM players p
+  `),
 };

@@ -7,6 +7,17 @@ const routes = [
     component: () => import('@/views/TournamentsListView.vue') 
   },
   {
+    path: '/players',
+    name: 'PlayerList',
+    component: () => import('@/views/PlayerListView.vue'),
+  },
+  {
+    path: '/player/:playerId',
+    name: 'GlobalPlayer',
+    component: () => import('@/views/GlobalPlayerView.vue'),
+    props: true
+  },
+  {
     path: '/tournament/:tournamentId',
     name: 'TournamentDashboard',
     component: () => import('@/views/TournamentDashboard.vue'),

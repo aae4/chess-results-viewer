@@ -19,6 +19,13 @@
           :to="{ name: 'TournamentsList' }"
           rounded="lg"
         ></v-list-item>
+        <v-list-item
+          prepend-icon="mdi-account-group-outline"
+          title="Все игроки"
+          value="players"
+          :to="{ name: 'PlayerList' }"
+          rounded="lg"
+        ></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
