@@ -1,160 +1,156 @@
 <template>
   <div>
-    <!-- Состояние загрузки -->
+    <!-- СОСТОЯНИЕ ЗАГРУЗКИ -->
     <div v-if="store.isLoadingDetails && !player" class="text-center pa-10">
       <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-      <div class="mt-4 text-grey">Загрузка профиля игрока...</div>
     </div>
 
-    <!-- Состояние контента -->
-    <div v-else-if="player" class="player-dashboard">
-      <!-- 1. "HERO" СЕКЦИЯ -->
-      <v-card class="mb-6">
-        <v-card-text class="d-flex align-center">
-          <v-btn icon="mdi-arrow-left" variant="text" @click="goBack" class="mr-4"></v-btn>
-          <v-avatar color="primary" size="64" class="mr-6">
-            <span class="text-h4 font-weight-light">{{ getInitials(player.canonical_name) }}</span>
-          </v-avatar>
-          <div>
-            <h1 class="text-h4 font-weight-bold">{{ player.canonical_name }}</h1>
-            <div class="text-subtitle-1 text-grey-darken-1">{{ player.club_city || player.federation }}</div>
-          </div>
-          <v-spacer></v-spacer>
-          <div class="text-center mx-4">
-            <div class="text-caption text-grey">МЕСТО</div>
-            <div class="text-h3 font-weight-bold">{{ player.final_rank || '-' }}</div>
-          </div>
-          <v-divider vertical class="mx-2"></v-divider>
-          <div class="text-center mx-4">
-            <div class="text-caption text-grey">ОЧКИ</div>
-            <div class="text-h3 font-weight-bold">{{ player.score || '-' }}</div>
-          </div>
-        </v-card-text>
-      </v-card>
-
+    <div v-else-if="player">
+      <!-- ======================================================= -->
+      <!-- =========== ЕДИНЫЙ АДАПТИВНЫЙ МАКЕТ ============ -->
+      <!-- ======================================================= -->
       <v-row>
-        <!-- Левая колонка: Аналитика -->
-        <v-col cols="12" md="5">
-          <v-row>
-            <!-- 2. Ключевые показатели -->
-            <v-col cols="12">
-              <v-card>
-                <v-card-text>
-                  <v-row>
-                    <v-col class="text-center">
-                      <v-icon color="grey-darken-1" class="mb-1">mdi-chess-king</v-icon>
-                      <div class="text-caption text-grey">Рейтинг</div>
-                      <div class="text-h6">{{ player.rating_at_tournament }}</div>
-                    </v-col>
-                    <v-col class="text-center">
-                      <v-icon color="grey-darken-1" class="mb-1">mdi-finance</v-icon>
-                      <div class="text-caption text-grey">Перфоманс</div>
-                      <div class="text-h6">{{ player.performance_rating || '-' }}</div>
-                    </v-col>
-                    <v-col class="text-center">
-                      <v-icon color="grey-darken-1" class="mb-1">mdi-arrow-up-down-bold</v-icon>
-                      <div class="text-caption text-grey">+/- Рейтинга</div>
-                      <div class="text-h6" :class="ratingChangeColor">{{ ratingChangeText }}</div>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </v-col>
-            
-            <!-- 3. Результативность по цвету -->
-            <v-col cols="12">
-              <v-card>
-                <v-card-title class="text-subtitle-1">Результативность по цвету</v-card-title>
-                <v-card-text>
-                  <div class="d-flex align-center mb-3">
-                    <div style="width: 100px"><v-icon icon="mdi-circle-outline" class="mr-2"></v-icon>Белые</div>
-                    <v-progress-linear :model-value="analysis.colorStats.white.percent" color="grey-lighten-2" height="22" rounded>
-                      <strong>{{ analysis.colorStats.white.points }} / {{ analysis.colorStats.white.games }}</strong>
-                    </v-progress-linear>
-                  </div>
-                  <div class="d-flex align-center">
-                    <div style="width: 100px"><v-icon icon="mdi-circle" class="mr-2"></v-icon>Черные</div>
-                    <v-progress-linear :model-value="analysis.colorStats.black.percent" color="grey-darken-2" height="22" rounded>
-                      <strong>{{ analysis.colorStats.black.points }} / {{ analysis.colorStats.black.games }}</strong>
-                    </v-progress-linear>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
+        <!-- ======================================================= -->
+        <!-- ============== ЛЕВАЯ КОЛОНКА / ОБЗОР ================ -->
+        <!-- ======================================================= -->
+        <v-col
+          cols="12"
+          md="4"
+          :class="{ 'sticky-column': display.mdAndUp.value }"
+        >
+          <!-- Карточка игрока -->
+          <v-card class="mb-6">
+            <v-card-text class="d-flex align-center">
+              <v-btn v-if="display.mdAndUp.value" icon="mdi-arrow-left" variant="text" @click="goBack" class="mr-4"></v-btn>
+              <v-avatar color="primary" :size="display.mdAndUp.value ? 56 : 64" class="mr-4">
+                <span :class="display.mdAndUp.value ? 'text-h5' : 'text-h4'" class="font-weight-light">{{ getInitials(player.canonical_name) }}</span>
+              </v-avatar>
+              <div>
+                <h1 :class="display.mdAndUp.value ? 'text-h6' : 'text-h5'" class="font-weight-bold">{{ player.canonical_name }}</h1>
+                <div class="text-body-1 text-medium-emphasis">{{ player.club_city || player.federation }}</div>
+              </div>
+            </v-card-text>
+            <v-divider></v-divider>
+            <div class="d-flex justify-space-around text-center pa-4">
+              <div>
+                <div class="text-caption">Место</div>
+                <div :class="display.mdAndUp.value ? 'text-h5' : 'text-h4'" class="font-weight-bold">{{ player.final_rank || '-' }}</div>
+              </div>
+              <div>
+                <div class="text-caption">Очки</div>
+                <div :class="display.mdAndUp.value ? 'text-h5' : 'text-h4'" class="font-weight-bold">{{ player.score || '-' }}</div>
+              </div>
+            </div>
+          </v-card>
 
-            <!-- 4. Дебютный репертуар -->
-            <v-col cols="12">
-              <v-card>
-                <v-card-title class="text-subtitle-1">Дебютный репертуар</v-card-title>
-                <v-card-text v-if="analysis.openingStats.length > 0">
-                  <v-table density="compact">
-                    <thead><tr><th>Дебют</th><th class="text-center">Партий</th><th class="text-center">Результат</th></tr></thead>
-                    <tbody>
-                      <tr v-for="op in analysis.openingStats" :key="op.name">
-                        <td><div>{{ op.name }}</div><div class="text-caption text-grey">{{ op.eco }}</div></td>
-                        <td class="text-center">{{ op.count }}</td>
-                        <td class="text-center font-weight-bold">{{ op.points }} / {{ op.count }}</td>
-                      </tr>
-                    </tbody>
-                  </v-table>
-                </v-card-text>
-                <v-card-text v-else class="text-center text-grey">
-                  Нет данных по дебютам.
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
+          <!-- Мобильные табы -->
+          <v-tabs v-if="!display.mdAndUp.value" v-model="tab" color="primary" grow class="mb-6">
+            <v-tab value="overview">Обзор</v-tab>
+            <v-tab value="games">Партии ({{ playerGames.length }})</v-tab>
+          </v-tabs>
+          
+          <!-- ОБЩАЯ АНАЛИТИКА (появляется на десктопе и во вкладке "Обзор" на мобильных) -->
+          <div v-if="display.mdAndUp.value || tab === 'overview'">
+            <v-card class="mb-6">
+              <v-card-text class="d-flex justify-space-around text-center">
+                <div class="stat-item"><v-icon>mdi-chess-king</v-icon><div class="text-caption">Рейтинг</div><div class="text-subtitle-1 font-weight-medium">{{ player.rating_at_tournament }}</div></div>
+                <div class="stat-item"><v-icon>mdi-finance</v-icon><div class="text-caption">Перфоманс</div><div class="text-subtitle-1 font-weight-medium">{{ player.performance_rating || '-' }}</div></div>
+                <div class="stat-item"><v-icon>mdi-arrow-up-down-bold</v-icon><div class="text-caption">+/-</div><div class="text-subtitle-1 font-weight-medium" :class="ratingChangeColor">{{ ratingChangeText }}</div></div>
+              </v-card-text>
+            </v-card>
+            <v-card class="mb-6">
+              <v-card-title>Результативность по цвету</v-card-title>
+              <v-card-text>
+                <div class="d-flex align-center mb-3"><div style="width: 80px"><v-icon>mdi-circle-outline</v-icon> Белые</div><v-progress-linear :model-value="analysis.colorStats.white.percent" color="grey-lighten-2" height="20" rounded><strong>{{ analysis.colorStats.white.points }}/{{ analysis.colorStats.white.games }}</strong></v-progress-linear></div>
+                <div class="d-flex align-center"><div style="width: 80px"><v-icon>mdi-circle</v-icon> Черные</div><v-progress-linear :model-value="analysis.colorStats.black.percent" color="grey-darken-2" height="20" rounded><strong>{{ analysis.colorStats.black.points }}/{{ analysis.colorStats.black.games }}</strong></v-progress-linear></div>
+              </v-card-text>
+            </v-card>
+            <v-card>
+              <v-card-title>Дебютный репертуар</v-card-title>
+              <div v-if="analysis.openingStats.length > 0">
+                <v-list lines="two" class="py-0">
+                  <template v-for="(op, i) in analysis.openingStats" :key="op.name">
+                    <v-list-item><v-list-item-title class="font-weight-medium">{{ op.name }}</v-list-item-title><v-list-item-subtitle>{{ op.eco }} · {{ op.count }} {{ op.count > 1 ? 'партии' : 'партия' }}</v-list-item-subtitle><template v-slot:append><v-chip label variant="tonal" class="font-weight-bold">{{ op.points }}/{{ op.count }}</v-chip></template></v-list-item>
+                    <v-divider v-if="i < analysis.openingStats.length - 1"></v-divider>
+                  </template>
+                </v-list>
+              </div>
+              <v-card-text v-else class="text-center text-grey">Нет данных.</v-card-text>
+            </v-card>
+          </div>
         </v-col>
 
-        <!-- Правая колонка: Список партий -->
-        <v-col cols="12" md="7">
-          <v-card class="fill-height">
-            <v-card-title class="text-subtitle-1">Сыгранные партии ({{ store.activePlayerGames.length }})</v-card-title>
+        <!-- ======================================================= -->
+        <!-- ============ ПРАВАЯ КОЛОНКА / ПАРТИИ ============= -->
+        <!-- ======================================================= -->
+        <v-col
+          cols="12"
+          md="8"
+          v-if="display.mdAndUp.value || tab === 'games'"
+        >
+          <v-card>
+            <v-card-title>Партии ({{ playerGames.length }})</v-card-title>
             <v-divider></v-divider>
-            <v-list class="game-list">
-              <v-list-item 
-                v-for="game in store.activePlayerGames" 
-                :key="game.game_id" 
-                @click="viewGame(game)" 
-                :disabled="!game.pgn_moves"
-                class="game-list-item"
-              >
-                <template v-slot:prepend>
-                  <div class="mr-4 text-center" style="width: 40px">
-                    <div class="text-caption text-grey">Тур</div>
-                    <div class="text-body-1 font-weight-medium">{{ game.round }}</div>
+            
+            <!-- УНИВЕРСАЛЬНЫЙ СПИСОК ПАРТИЙ -->
+            <v-list class="py-0">
+              <template v-for="(game, i) in playerGames" :key="game.game_id">
+                <v-list-item
+                  class="game-list-item"
+                  :class="{ 'not-played': !isGamePlayed(game) }"
+                  @click="viewGame(game)"
+                  :disabled="!game.pgn_moves"
+                  lines="two"
+                >
+                  <div class="d-flex align-center w-100">
+                    <!-- Левая часть: Тур, Соперник -->
+                    <div class="round-indicator text-center">
+                      <div class="text-caption">Тур</div>
+                      <div class="font-weight-medium">{{ game.round }}</div>
+                    </div>
+                    
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-center">
+                        <v-icon size="x-small" :icon="getColorIcon(game.color)" class="mr-2"></v-icon>
+                        <span class="font-weight-bold">vs {{ game.opponent_name }}</span>
+                      </div>
+                      <div class="text-body-2 text-medium-emphasis ml-5">({{ game.opponent_rating || '-' }})</div>
+                    </div>
+                    
+                    <!-- Правая часть: Результат, Иконка -->
+                    <div class="ml-auto d-flex align-center">
+                       <v-chip
+                          :color="getResultChipColor(game)"
+                          label
+                          class="font-weight-bold result-chip"
+                        >
+                          {{ getResultText(game) }}
+                        </v-chip>
+                        <v-icon :style="{ opacity: game.pgn_moves ? 1 : 0 }" class="ml-2 text-medium-emphasis">mdi-chevron-right</v-icon>
+                    </div>
                   </div>
-                </template>
-                <v-list-item-title class="font-weight-bold d-flex align-center">
-                  <v-icon size="small" :icon="getColorIcon(game.color)" class="mr-2"></v-icon>
-                  <span>vs {{ game.opponent_name }}</span>
-                  <span class="text-caption text-grey ml-2">({{ game.opponent_rating || '-' }})</span>
-                </v-list-item-title>
-                <template v-slot:append>
-                  <v-chip :color="getResultChipColor(game)" label class="font-weight-bold" style="width: 50px; justify-content: center;">
-                    {{ formatPlayerResult(game.result, game.color) }}
-                  </v-chip>
-                  <v-icon v-if="game.pgn_moves" class="ml-4 text-grey">mdi-chevron-right</v-icon>
-                </template>
-              </v-list-item>
+
+                  <v-divider v-if="i < playerGames.length - 1" class="list-divider-mobile"></v-divider>
+                </v-list-item>
+                <v-divider v-if="i < playerGames.length - 1 && display.mdAndUp.value"></v-divider>
+              </template>
             </v-list>
           </v-card>
         </v-col>
       </v-row>
     </div>
-    
+
     <v-alert v-else type="warning" class="mt-4">Игрок не найден.</v-alert>
   </div>
 </template>
 
 <script setup>
-import { computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTournamentStore } from '@/stores/tournamentStore';
-import { historyToPgnString } from '@/utils/pgn';
 import { getInitials, getColorIcon, formatPlayerResult } from '@/utils/formatters';
 import { calculatePlayerStatisticsInTournament } from '@/utils/statisticsCalculator';
-import { Chess } from 'chess.js';
+import { useDisplay } from 'vuetify';
 
 const props = defineProps({
   tournamentId: { type: [String, Number], required: true },
@@ -163,6 +159,8 @@ const props = defineProps({
 
 const store = useTournamentStore();
 const router = useRouter();
+const display = useDisplay();
+const tab = ref('overview');
 
 const player = computed(() => store.activePlayer);
 const playerGames = computed(() => store.activePlayerGames);
@@ -171,21 +169,25 @@ watch(() => props.playerId, (newPlayerId) => {
     if (newPlayerId && props.tournamentId) {
       store.fetchPlayerData(newPlayerId, props.tournamentId);
     }
-  }, { immediate: true }
-);
+  }, { immediate: true });
 
 const goBack = () => router.back();
-
-const viewGame = (game) => {
-  if (!game.pgn_moves) return;
-  router.push({ name: 'Game', params: { gameId: game.id } });
-};
+const viewGame = (game) => { if (game.pgn_moves) router.push({ name: 'Game', params: { gameId: game.id } }); };
 
 const getResultChipColor = (game) => {
+  if (!isGamePlayed(game)) return 'grey-lighten-1';
   const result = formatPlayerResult(game.result, game.color);
   if (result === '1') return 'success';
   if (result === '0') return 'error';
-  return 'grey';
+  return 'grey-darken-1';
+};
+
+const getResultText = (game) => {
+  if (!isGamePlayed(game)) return 'Не сыграна';
+  const result = formatPlayerResult(game.result, game.color);
+  if (result === '1') return 'Победа';
+  if (result === '0') return 'Поражение';
+  return 'Ничья';
 };
 
 const ratingChange = computed(() => player.value?.rating_change || 0);
@@ -206,15 +208,61 @@ const analysis = computed(() => {
     ecoDatabase: store.ecoDatabase
   });
 });
+
+const isGamePlayed = (game) => {
+  const result = formatPlayerResult(game.result, game.color);
+  return result === '1' || result === '0' || result === '½';
+};
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
-.player-dashboard { max-width: 1200px; margin: auto; }
-.game-list { padding: 0; }
-.game-list-item { border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12); cursor: pointer; transition: background-color 0.15s ease-in-out; }
-.game-list-item:hover { background-color: rgba(var(--v-theme-primary), 0.04); }
-.game-list-item:last-child { border-bottom: none; }
-.game-list-item[disabled] { cursor: default; opacity: 0.6; }
-.game-list-item[disabled]:hover { background-color: transparent; }
+.sticky-column {
+  position: sticky;
+  top: 80px; /* 64px (app-bar) + 16px (отступ) */
+}
+
+.stat-item {
+  min-width: 90px;
+}
+
+.round-indicator {
+  width: 50px; 
+  flex-shrink: 0; 
+  margin-right: 16px;
+}
+
+.game-list-item {
+  min-height: 72px;
+}
+.game-list-item .v-list-item-title, .game-list-item .v-list-item-subtitle {
+  line-height: 1.4;
+}
+
+.result-chip {
+  width: 110px;
+  justify-content: center;
+}
+
+.not-played {
+  opacity: 0.7;
+}
+
+/* Скрываем разделитель внутри элемента списка на десктопе */
+@media (min-width: 960px) {
+  .list-divider-mobile {
+    display: none;
+  }
+}
+
+/* Показываем разделитель внутри элемента списка на мобильных */
+@media (max-width: 959px) {
+  .game-list-item {
+    padding-bottom: 0 !important;
+  }
+  .list-divider-mobile {
+    margin-top: 12px;
+    margin-left: -16px;
+    margin-right: -16px;
+  }
+}
 </style>

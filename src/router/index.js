@@ -19,19 +19,9 @@ const routes = [
       { path: 'participants', name: 'Participants', component: () => import('@/views/ParticipantsView.vue') },
       { path: 'crosstable', name: 'Crosstable', component: () => import('@/views/CrosstableView.vue') },
       { path: 'statistics', name: 'Statistics', component: () => import('@/views/StatisticsView.vue') },
+      { path: 'player/:playerId', name: 'Player', component: () => import('@/views/PlayerView.vue'), props: true },
+      { path: 'game/:gameId', name: 'Game', component: () => import('@/views/GameView.vue'), props: true },
     ]
-  },
-  { 
-    path: '/tournament/:tournamentId/player/:playerId', 
-    name: 'Player', 
-    component: () => import('@/views/PlayerView.vue'), 
-    props: true 
-  },
-  { 
-    path: '/game/:gameId', 
-    name: 'Game', 
-    component: () => import('@/views/GameView.vue'), 
-    props: true 
   },
   {
     path: '/:pathMatch(.*)*',

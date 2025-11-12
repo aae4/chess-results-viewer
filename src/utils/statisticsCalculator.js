@@ -138,7 +138,7 @@ export function calculateTournamentStatistics({ participants, gamesForStats, sta
         });
 
         let foundOpening = null;
-        for (let i = Math.min(history.length, 20); i > 0; i--) {
+        for (let i = Math.min(history.length, 4); i > 0; i--) {
           const pgnStr = historyToPgnString(history.slice(0, i));
           if (ecoDatabase[pgnStr]) {
             foundOpening = ecoDatabase[pgnStr];
@@ -162,7 +162,7 @@ export function calculateTournamentStatistics({ participants, gamesForStats, sta
 
   const totalGames = whiteWins + blackWins + draws;
   const resultDistribution = {
-    whiteWins, blackWins, draws,
+    whiteWins, blackWins, draws, totalGames,
     whiteWinPercent: totalGames > 0 ? Math.round((whiteWins / totalGames) * 100) : 0,
     blackWinPercent: totalGames > 0 ? Math.round((blackWins / totalGames) * 100) : 0,
     drawPercent: totalGames > 0 ? Math.round((draws / totalGames) * 100) : 0,
@@ -173,13 +173,25 @@ export function calculateTournamentStatistics({ participants, gamesForStats, sta
     .map(p => ({ player: p, diff: p.performance_rating - p.rating_at_tournament }))
     .sort((a, b) => b.diff - a.diff)[0];
 
-  const mostDecisivePlayer = participants
-    .map(p => {
-        const playedGames = gamesForStats.filter(g => g.white_player_id === p.id || g.black_player_id === p.id).length;
-        const drawsCount = playerDrawCounts[p.id] || 0;
-        return { player: p, drawRate: playedGames > 0 ? (drawsCount / playedGames) * 100 : 100 };
+  const mostDecisivePlayer = standings
+    .map(standing => {
+        const playedGames = gamesForStats.filter(g => g.white_player_id === standing.player_id || g.black_player_id === standing.player_id).length;
+        const drawsCount = playerDrawCounts[standing.player_id] || 0;
+
+        return { 
+          player: { id: standing.player_id, name: standing.name },
+          drawRate: playedGames > 0 ? (drawsCount / playedGames) * 100 : 100,
+          playedGames: playedGames,
+          score: standing.score,
+          final_rank: standing.final_rank,
+        };
     })
-    .sort((a, b) => a.drawRate - b.drawRate)[0];
+    .sort((a, b) => {
+      if (a.drawRate !== b.drawRate) return a.drawRate - b.drawRate;
+      if (a.playedGames !== b.playedGames) return b.playedGames - a.playedGames;
+      if (a.score !== b.score) return b.score - a.score;
+      return a.final_rank - b.final_rank;
+    })[0];
 
   const undefeatedPlayers = standings.filter(p => {
     const playerGames = gamesForStats.filter(g => g.white_player_id === p.player_id || g.black_player_id === p.player_id);

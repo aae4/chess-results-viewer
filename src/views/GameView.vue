@@ -1,109 +1,98 @@
 <template>
 <div>
-  <!-- 1. Состояние ЗАГРУЗКИ -->
+  <!-- Состояния загрузки и ошибки (без изменений) -->
   <div v-if="store.isLoadingDetails && !game" class="text-center pa-10">
     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-    <div class="mt-4 text-grey">Загрузка партии...</div>
+    <div class="mt-4 text-medium-emphasis">Загрузка партии...</div>
   </div>
-
-  <!-- 2. Состояние ОШИБКИ -->
-  <v-alert v-else-if="store.error" type="error" prominent>
-    Не удалось загрузить данные партии: {{ store.error }}
-  </v-alert>
+  <v-alert v-else-if="store.error" type="error" prominent>...</v-alert>
   
-  <!-- 3. Состояние КОНТЕНТА -->
   <div v-else-if="game">
-    <v-card class="mx-auto" elevation="0" color="transparent">
-      <!-- Верхняя панель навигации -->
-      <v-toolbar flat color="transparent">
-        <v-btn icon="mdi-arrow-left" variant="text" @click="goBack" class="mr-2"></v-btn>
-        <v-toolbar-title class="text-center mx-0">
-          <div class="text-subtitle-1">Тур {{ game.round }}</div>
-          <div class="text-caption">Результат: {{ formattedResult }}</div>
-        </v-toolbar-title>
-        <v-tooltip location="bottom">
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" icon="mdi-open-in-new" variant="text" :href="lichessUrl" target="_blank"></v-btn>
-          </template>
-          <span>Анализ на Lichess</span>
-        </v-tooltip>
-      </v-toolbar>
-      <v-divider></v-divider>
-
-      <!-- Основной контент -->
-      <v-card-text>
-        <v-row>
-          <!-- Левая колонка: Доска -->
-          <v-col cols="12" md="7">
-            <v-sheet rounded="lg" class="fill-height d-flex flex-column">
-              <div class="pa-2 flex-grow-1">
-                <div class="player-info pa-2">
-                  <v-icon size="small" class="mr-2" :color="topPlayerColor === 'w' ? 'grey-lighten-2' : 'grey-darken-2'">mdi-chess-king</v-icon>
-                  <span class="font-weight-bold">{{ topPlayer.name }}</span>
-                  <span class="text-grey ml-2">({{ topPlayer.rating }})</span>
+    <v-row>
+      <!-- Левая колонка: Доска и управление -->
+      <v-col cols="12" md="7">
+        <v-sheet class="fill-height d-flex flex-column" border rounded="lg">
+          <!-- Верхняя панель -->
+          <div class="player-info pa-3">
+            <v-icon size="small" class="mr-2">mdi-chess-king</v-icon>
+            <span class="font-weight-bold text-subtitle-1">{{ topPlayer.name }}</span>
+            <span class="text-medium-emphasis ml-2">({{ topPlayer.rating }})</span>
+          </div>
+          <!-- Доска -->
+          <div class="px-2 flex-grow-1">
+            <TheChessboard :board-config="boardConfig" reactive-config @board-created="onBoardCreated" />
+          </div>
+          <!-- Нижняя панель -->
+          <div class="player-info pa-3">
+            <v-icon size="small" class="mr-2">mdi-chess-king</v-icon>
+            <span class="font-weight-bold text-subtitle-1">{{ bottomPlayer.name }}</span>
+            <span class="text-medium-emphasis ml-2">({{ bottomPlayer.rating }})</span>
+          </div>
+          <!-- Панель управления -->
+          <v-toolbar flat density="compact">
+            <v-btn-group variant="text" density="comfortable">
+              <v-btn @click="toStart" icon="mdi-skip-previous"></v-btn>
+              <v-btn @click="back" icon="mdi-chevron-left"></v-btn>
+              <v-btn @click="next" icon="mdi-chevron-right"></v-btn>
+              <v-btn @click="toEnd" icon="mdi-skip-next"></v-btn>
+            </v-btn-group>
+            <v-spacer></v-spacer>
+            <v-btn @click="flipBoard" variant="text" icon="mdi-rotate-3d-variant"></v-btn>
+          </v-toolbar>
+        </v-sheet>
+      </v-col>
+      
+      <!-- Правая колонка: Информация и ходы -->
+      <v-col cols="12" md="5">
+        <v-card class="fill-height d-flex flex-column">
+          <v-toolbar flat density="compact">
+            <v-btn v-if="display.mdAndUp.value" icon="mdi-arrow-left" @click="router.back()"></v-btn>
+            <v-toolbar-title class="text-subtitle-1 font-weight-medium">Детали партии</v-toolbar-title>
+          </v-toolbar>
+          <v-divider></v-divider>
+          <v-card-text class="text-center">
+            <div class="text-h6 font-weight-bold">{{ game.tournament_name }}</div>
+            <div class="text-body-1 text-medium-emphasis mb-3">Тур {{ game.round }} · Доска {{ game.board }}</div>
+            <v-chip label color="primary" variant="elevated" size="large">
+              <span class="text-h5 font-weight-bold">{{ formattedResult }}</span>
+            </v-chip>
+          </v-card-text>
+          <v-divider></v-divider>
+          <!-- Информация о дебюте -->
+          <v-list-item v-if="opening" :title="opening.n" :subtitle="opening.e" prepend-icon="mdi-book-open-page-variant-outline"></v-list-item>
+          <v-divider></v-divider>
+          <!-- Список ходов -->
+          <div class="move-list-wrapper" ref="scrollWrapper">
+            <div class="pa-2" ref="movesContainer">
+              <div v-for="(turn, index) in turns" :key="index" class="d-flex align-center turn-row">
+                <div class="move-number text-medium-emphasis">{{ index + 1 }}.</div>
+                <div 
+                  :class="{ 'current-move': isCurrentMove(index * 2) }" 
+                  @click="goToMove(index * 2)" 
+                  class="move-item flex-grow-1"
+                  v-html="formatSanWithFigurine(turn.white)">
                 </div>
-                <TheChessboard :board-config="boardConfig" reactive-config @board-created="onBoardCreated" />
-                <div class="player-info pa-2">
-                  <v-icon size="small" class="mr-2" :color="bottomPlayerColor === 'w' ? 'grey-lighten-2' : 'grey-darken-2'">mdi-chess-king</v-icon>
-                  <span class="font-weight-bold">{{ bottomPlayer.name }}</span>
-                  <span class="text-grey ml-2">({{ bottomPlayer.rating }})</span>
+                <div 
+                  v-if="turn.black"
+                  :class="{ 'current-move': isCurrentMove(index * 2 + 1) }" 
+                  @click="goToMove(index * 2 + 1)" 
+                  class="move-item flex-grow-1"
+                  v-html="formatSanWithFigurine(turn.black)">
                 </div>
+                <div v-else class="flex-grow-1"></div> <!-- Заполнитель -->
               </div>
-              <v-sheet class="pa-2" color="surface-variant">
-                <v-toolbar density="compact" flat class="controls-panel">
-                  <v-btn-group variant="text" density="comfortable">
-                    <v-btn @click="toStart"><v-icon>mdi-skip-previous</v-icon><v-tooltip activator="parent" location="top">В начало</v-tooltip></v-btn>
-                    <v-btn @click="back"><v-icon>mdi-chevron-left</v-icon><v-tooltip activator="parent" location="top">Назад</v-tooltip></v-btn>
-                    <v-btn @click="next"><v-icon>mdi-chevron-right</v-icon><v-tooltip activator="parent" location="top">Вперед</v-tooltip></v-btn>
-                    <v-btn @click="toEnd"><v-icon>mdi-skip-next</v-icon><v-tooltip activator="parent" location="top">В конец</v-tooltip></v-btn>
-                  </v-btn-group>
-                  <v-spacer></v-spacer>
-                  <v-btn @click="flipBoard" variant="text" icon><v-icon>mdi-rotate-3d-variant</v-icon><v-tooltip activator="parent" location="top">Перевернуть доску</v-tooltip></v-btn>
-                </v-toolbar>
-              </v-sheet>
-            </v-sheet>
-          </v-col>
-          
-          <!-- Правая колонка: Информация и ходы -->
-          <v-col cols="12" md="5">
-            <v-card class="fill-height d-flex flex-column">
-              <div class="header-panel pa-4">
-                <div class="text-center">
-                  <div class="text-h6 font-weight-medium">{{ game.tournament_name }}</div>
-                  <div class="text-body-2 text-grey-darken-1 mb-2">Тур {{ game.round }}</div>
-                  <v-chip label color="primary" variant="tonal" size="large" class="px-4">
-                    <span class="text-h5 font-weight-bold">{{ formattedResult }}</span>
-                  </v-chip>
-                </div>
-              </div>
-              <v-divider></v-divider>
-              <div class="move-list-wrapper" ref="scrollWrapper">
-                <v-table density="compact" class="move-table" fixed-header>
-                  <thead><tr><th class="text-center" style="width: 20%;">#</th><th class="text-left">Белые</th><th class="text-left">Черные</th></tr></thead>
-                  <tbody ref="movesContainer">
-                    <tr v-for="(turn, index) in turns" :key="index">
-                      <td class="text-center move-number">{{ index + 1 }}.</td>
-                      <td :class="{ 'current-move': isCurrentMove(index * 2) }" @click="goToMove(index * 2)" class="move-item">
-                        <span v-html="formatSanWithFigurine(turn.white)"></span>
-                      </td>
-                      <td v-if="turn.black" :class="{ 'current-move': isCurrentMove(index * 2 + 1) }" @click="goToMove(index * 2 + 1)" class="move-item">
-                        <span v-html="formatSanWithFigurine(turn.black)"></span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+            </div>
+          </div>
+          <v-divider></v-divider>
+          <v-card-actions>
+            <v-btn :href="lichessUrl" target="_blank" prepend-icon="mdi-open-in-new" variant="text">
+              Анализ на Lichess
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
   </div>
-  
-  <!-- 4. Состояние "НЕТ ДАННЫХ" -->
-  <v-alert v-else type="warning" class="mt-4" prominent border="start" icon="mdi-alert-circle-outline">
-    Партия с ID "{{ gameId }}" не найдена.
-  </v-alert>
 </div>
 </template>
 
@@ -115,6 +104,8 @@ import { TheChessboard } from 'vue3-chessboard';
 import 'vue3-chessboard/style.css';
 import { Chess } from 'chess.js';
 import { formatResult, formatSanWithFigurine } from '@/utils/formatters';
+import { historyToPgnString } from '@/utils/pgn';
+import { useDisplay } from 'vuetify';
 
 const props = defineProps({
   gameId: { type: [String, Number], required: true }
@@ -122,7 +113,7 @@ const props = defineProps({
 
 const store = useTournamentStore();
 const router = useRouter();
-
+const display = useDisplay();
 const game = computed(() => store.activeGame);
 
 watch(() => props.gameId, (newGameId) => {
@@ -186,7 +177,21 @@ const lichessUrl = computed(() => {
     return `https://lichess.org/paste?pgn=${encodeURIComponent(pgnWithHeaders)}`;
 });
 
-const goBack = () => router.back();
+const opening = computed(() => {
+  if (!game.value?.pgn_moves || !store.ecoDatabase) return null;
+  try {
+    const chess = new Chess();
+    chess.loadPgn(game.value.pgn_moves);
+    const history = chess.history();
+    for (let i = Math.min(history.length, 20); i > 0; i--) {
+      const pgnStr = historyToPgnString(history.slice(0, i));
+      if (store.ecoDatabase[pgnStr]) {
+        return store.ecoDatabase[pgnStr];
+      }
+    }
+  } catch (e) { return null; }
+  return null;
+});
 
 const turns = computed(() => {
   const result = [];

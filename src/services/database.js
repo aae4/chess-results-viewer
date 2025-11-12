@@ -18,7 +18,7 @@ async function createWorker() {
         serverMode: "full",
         url: DB_URL,
         requestChunkSize: 4096,
-        databaseLengthBytes: 5652480 // exact byte size of the SQLite file
+        databaseLengthBytes: 5656576 // exact byte size of the SQLite file
       },
     }],
     workerUrl.toString(),
@@ -142,15 +142,17 @@ export const dbService = {
   /** Получить детали одной конкретной партии по ее ID */
   getGameDetails: (gameId) => query(`
     SELECT 
-      g.id, g.round, g.board, g.result, g.pgn_moves,
+      g.id, g.round, g.board, g.result, g.pgn_moves, g.eco_code,
       wp.canonical_name as white_name, bp.canonical_name as black_name,
       wpf.rating_at_tournament as white_rating, bpf.rating_at_tournament as black_rating,
-      wp.id as white_player_id, bp.id as black_player_id
+      wp.id as white_player_id, bp.id as black_player_id,
+      t.name as tournament_name
     FROM games g
     JOIN player_performances wpf ON wpf.id = g.white_performance_id
     JOIN players wp ON wp.id = wpf.player_id
     JOIN player_performances bpf ON bpf.id = g.black_performance_id
     JOIN players bp ON bp.id = bpf.player_id
+    JOIN tournaments t ON t.id = g.tournament_id
     WHERE g.id = ?
   `, [gameId]).then(res => res[0]),
 
