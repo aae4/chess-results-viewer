@@ -221,7 +221,7 @@ export const dbService = {
     FROM player_performances perf
     JOIN tournaments t ON t.id = perf.tournament_id
     WHERE perf.player_id = ?
-    ORDER BY t.start_date ASC
+    ORDER BY t.start_date DESC
   `, [playerId]),
 
   /** Получить всех игроков с агрегированной статистикой (последний рейтинг, кол-во турниров) 

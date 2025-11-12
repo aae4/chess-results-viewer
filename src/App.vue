@@ -86,9 +86,12 @@ const toggleTheme = () => {
 const goBack = () => router.back();
 const goHome = () => router.push({ name: 'TournamentsList' });
 
-// Показываем кнопку "Назад" на мобильных, если это страница игрока или партии
 const showBackButton = computed(() => {
-  return display.smAndDown.value && ['Player', 'Game', 'GlobalPlayer'].includes(route.name);
+  const deepPages = [
+    'Standings', 'Rounds', 'Participants', 'Crosstable', 'Statistics',
+    'Player', 'Game', 'GlobalPlayer'
+  ];
+  return deepPages.includes(route.name);
 });
 
 

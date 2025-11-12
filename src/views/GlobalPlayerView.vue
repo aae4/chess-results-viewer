@@ -89,14 +89,22 @@
       </v-card>
 
       <!-- Система вкладок -->
-      <v-tabs v-model="tab" color="primary" class="mb-6" :align-tabs="smAndDown ? 'center' : 'start'" show-arrows>
+<!--       <v-tabs v-model="tab" color="primary" class="mb-6" :align-tabs="smAndDown ? 'center' : 'start'" show-arrows>
         <v-tab value="overview"><v-icon start>mdi-chart-line</v-icon>Обзор</v-tab>
         <v-tab value="analytics"><v-icon start>mdi-magnify-scan</v-icon>Статистика</v-tab>
         <v-tab value="h2h"><v-icon start>mdi-sword-cross</v-icon>Соперники</v-tab>
         <v-tab value="history"><v-icon start>mdi-history</v-icon>История</v-tab>
-      </v-tabs>
+      </v-tabs> -->
+      <v-sheet class="sticky-tabs" elevation="2">
+        <v-tabs v-model="tab" color="primary" :align-tabs="smAndDown ? 'center' : 'start'" show-arrows>
+          <v-tab value="overview"><v-icon start>mdi-chart-line</v-icon>Обзор</v-tab>
+          <v-tab value="analytics"><v-icon start>mdi-magnify-scan</v-icon>Статистика</v-tab>
+          <v-tab value="h2h"><v-icon start>mdi-sword-cross</v-icon>Соперники</v-tab>
+          <v-tab value="history"><v-icon start>mdi-history</v-icon>История</v-tab>
+        </v-tabs>
+      </v-sheet>
 
-      <v-window v-model="tab" :touch="false" class="pa-1">
+	  <v-window v-model="tab" :touch="false" class="pa-1 mt-6">
         <!-- ВКЛАДКА "ОБЗОР" -->
         <v-window-item value="overview">
           <v-row>
@@ -497,5 +505,13 @@ const getRatingChangeColor = (change) => {
 /* ИЗМЕНЕНИЕ: Добавляем класс для переноса длинных названий турниров */
 .wrap-text {
   white-space: normal;
+}
+
+.sticky-tabs {
+  position: sticky;
+  /* 64px - это стандартная высота v-app-bar. */
+  /* Если она у вас другая, измените это значение. */
+  top: 64px;
+  z-index: 100; /* Должно быть выше контента, но ниже v-dialog и т.п. */
 }
 </style>
