@@ -45,21 +45,23 @@
     <div v-else>
       <!-- 2. "HERO" СЕКЦИЯ: Последний турнир -->
       <v-card 
-        v-if="latestTournament && !selectedYear && !searchQuery" 
+        v-if="currentTournamentForHero" 
         class="mb-8 hero-card"
-        :to="{ name: 'Standings', params: { tournamentId: latestTournament.id } }"
+        :to="{ name: 'Standings', params: { tournamentId: currentTournamentForHero.id } }"
+        :variant="currentTournamentInfo.variant"
+        :color="currentTournamentInfo.color"
       >
         <v-card-text class="d-flex align-center">
           <div>
-            <v-chip color="primary" label class="mb-2">
-              <v-icon start icon="mdi-new-box"></v-icon>
-              Последний турнир
+            <v-chip :color="currentTournamentInfo.chipColor" label class="mb-2 font-weight-bold">
+              <v-icon start :icon="currentTournamentInfo.icon"></v-icon>
+              {{ currentTournamentInfo.text }}
             </v-chip>
-            <h2 class="text-h4 font-weight-bold">{{ latestTournament.name }}</h2>
-            <div class="text-subtitle-1 text-grey-darken-1 mt-1">{{ latestTournament.start_date }}</div>
+            <h2 class="text-h4 font-weight-bold">{{ currentTournamentForHero.name }}</h2>
+            <div class="text-subtitle-1 mt-1">{{ currentTournamentForHero.start_date }}</div>
           </div>
           <v-spacer></v-spacer>
-          <v-icon size="64" color="grey-lighten-2">mdi-chevron-right</v-icon>
+          <v-icon size="64" class="d-none d-sm-block chevron-icon">mdi-chevron-right</v-icon>
         </v-card-text>
       </v-card>
 
@@ -115,7 +117,29 @@ watch([searchQuery, selectedYear], () => {
   // мы принудительно возвращаем его на первую страницу результатов.
   currentPage.value = 1;
 });
-// ===================================================================
+
+const currentTournamentForHero = computed(() => {
+  // Показываем Hero блок только если нет активных фильтров
+  if (searchQuery.value || selectedYear.value) {
+    return null;
+  }
+  return store.currentTournament;
+});
+
+const currentTournamentInfo = computed(() => {
+  const status = store.currentTournament?.status;
+  if (status === 'live') {
+    return { text: 'LIVE', icon: 'mdi-broadcast', color: 'primary', variant: 'tonal', chipColor: 'primary' };
+  }
+  if (status === 'upcoming') {
+    return { text: 'СКОРО', icon: 'mdi-calendar-clock', color: 'secondary', variant: 'tonal', chipColor: 'secondary' };
+  }
+  if (status === 'recent') {
+    return { text: 'НЕДАВНО ЗАВЕРШИЛСЯ', icon: 'mdi-history', color: undefined, variant: 'elevated', chipColor: 'primary' };
+  }
+  // Запасной вариант, если currentTournament не определен
+  return { text: 'Последний турнир', icon: 'mdi-new-box', color: undefined, variant: 'elevated', chipColor: 'primary' };
+});
 
 const availableYears = computed(() => {
   if (!store.tournamentsList) return [];
@@ -123,9 +147,18 @@ const availableYears = computed(() => {
   return Array.from(years).sort((a, b) => b - a);
 });
 
+const allTournamentsForList = computed(() => store.tournamentsList);
+
+// const filteredTournaments = computed(() => {
+//   let tournaments = [...allTournamentsForList.value];
+//   if (selectedYear.value) { /* ... */ }
+//   if (searchQuery.value) { /* ... */ }
+//   return tournaments;
+// });
+
 const filteredTournaments = computed(() => {
   if (!store.tournamentsList) return [];
-  let tournaments = [...store.tournamentsList];
+  let tournaments = [...allTournamentsForList.value];
 
   if (selectedYear.value) {
     tournaments = tournaments.filter(t => t.start_date.startsWith(selectedYear.value));
@@ -137,24 +170,23 @@ const filteredTournaments = computed(() => {
   return tournaments;
 });
 
-const latestTournament = computed(() => store.tournamentsList[0] || null);
+const listForPagination = computed(() => {
+  const list = filteredTournaments.value;
+  // Если есть Hero блок (т.е. нет фильтров), исключаем из списка текущий турнир, чтобы не дублировать
+  if (currentTournamentForHero.value) {
+    return list.filter(t => t.id !== currentTournamentForHero.value.id);
+  }
+  return list;
+});
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredTournaments.value.length / itemsPerPage);
+  return Math.ceil(listForPagination.value.length / itemsPerPage);
 });
 
 const paginatedTournaments = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
-  
-  // Упрощаем логику: если есть фильтры, hero-блок не показывается,
-  // поэтому начинаем нарезку с 0-го элемента.
-  if (selectedYear.value || searchQuery.value) {
-    return filteredTournaments.value.slice(start, end);
-  }
-  
-  // В обычном режиме пропускаем первый элемент (он в hero)
-  return filteredTournaments.value.slice(start + 1, end + 1);
+  return listForPagination.value.slice(start, end);
 });
 </script>
 

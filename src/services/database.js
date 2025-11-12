@@ -364,4 +364,38 @@ export const dbService = {
     JOIN tournaments t ON t.id = g.tournament_id
     WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
   `, [playerId, playerId, playerId, playerId, playerId]),
+
+/** 
+ * Находит самый релевантный "текущий" турнир по трехуровневой логике.
+ * Приоритет: 1. Идет сейчас -> 2. Скоро начнется -> 3. Недавно завершился.
+ */
+getCurrentTournament: (todayDate) => query(`
+  SELECT * FROM (
+    -- Приоритет 1: Турнир идет прямо сейчас
+    SELECT *, 1 as priority, 'live' as status
+    FROM tournaments
+    WHERE ? BETWEEN start_date AND end_date
+    LIMIT 1
+  )
+  UNION ALL
+  SELECT * FROM (
+    -- Приоритет 2: Ближайший предстоящий турнир
+    SELECT *, 2 as priority, 'upcoming' as status
+    FROM tournaments
+    WHERE start_date > ?
+    ORDER BY start_date ASC
+    LIMIT 1
+  )
+  UNION ALL
+  SELECT * FROM (
+    -- Приоритет 3: Самый последний завершившийся турнир
+    SELECT *, 3 as priority, 'recent' as status
+    FROM tournaments
+    WHERE end_date < ?
+    ORDER BY end_date DESC
+    LIMIT 1
+  )
+  ORDER BY priority ASC
+  LIMIT 1
+`, [todayDate, todayDate, todayDate]).then(res => res[0]),
 };

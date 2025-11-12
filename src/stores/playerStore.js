@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { dbService } from '@/services/database';
 import { formatPlayerResult } from '@/utils/formatters';
+import { useTournamentStore } from './tournamentStore';
 
 export const usePlayerStore = defineStore('player', () => {
   // --- СОСТОЯНИЕ ---
@@ -72,6 +73,18 @@ export const usePlayerStore = defineStore('player', () => {
         },
       ],
     };
+  });
+
+  /** Проверяет участие игрока в "текущем" турнире и возвращает данные об участии */
+  const participationInCurrentTournament = computed(() => {
+    const tournamentStore = useTournamentStore();
+    const current = tournamentStore.currentTournament;
+
+    if (!current || !playerCareer.value || playerCareer.value.length === 0) {
+      return null;
+    }
+
+    return playerCareer.value.find(p => p.tournament_id === current.id) || null;
   });
   
   /** Ключевые показатели карьеры */
@@ -294,6 +307,6 @@ export const usePlayerStore = defineStore('player', () => {
     processedOpponentStats, processedH2HStats,
     fetchPlayerAnalytics, fetchPlayerH2H, careerPerformanceStats,
     performanceByRounds,
-    notableResults,
+    notableResults, participationInCurrentTournament
   };
 });

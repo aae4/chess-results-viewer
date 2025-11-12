@@ -65,6 +65,29 @@
         </v-card-text>
       </v-card>
 
+      <!-- ======================================================= -->
+      <!-- =========== СТАТУСНАЯ КАРТОЧКА ======================== -->
+      <!-- ======================================================= -->
+      <v-card v-if="playerStatus.visible" class="mb-6 card-hover" :color="playerStatus.color" :variant="playerStatus.variant">
+        <v-card-text>
+          <div class="d-flex align-center">
+            <v-icon class="mr-3" :icon="playerStatus.icon" size="24"></v-icon>
+            <div class="flex-grow-1">
+              <div class="font-weight-bold">{{ playerStatus.title }}</div>
+              <div class="text-caption">{{ playerStatus.subtitle }}</div>
+            </div>
+            <v-btn
+              :to="{ name: 'Standings', params: { tournamentId: playerStatus.tournamentId } }"
+              variant="outlined"
+              size="small"
+              append-icon="mdi-arrow-right"
+            >
+              Перейти
+            </v-btn>
+          </div>
+        </v-card-text>
+      </v-card>
+
       <!-- Система вкладок -->
       <v-tabs v-model="tab" color="primary" class="mb-6" :align-tabs="smAndDown ? 'center' : 'start'" show-arrows>
         <v-tab value="overview"><v-icon start>mdi-chart-line</v-icon>Обзор</v-tab>
@@ -309,11 +332,13 @@ import { usePlayerStore } from '@/stores/playerStore';
 import { useDisplay } from 'vuetify';
 import { getInitials } from '@/utils/formatters';
 import { getEcoDatabase } from '@/services/ecoDatabase';
+import { useTournamentStore } from '@/stores/tournamentStore';
 import RatingChart from '@/components/RatingChart.vue';
 
 // --- PROPS & STORE ---
 const props = defineProps({ playerId: { type: [String, Number], required: true }});
 const store = usePlayerStore();
+const tournamentStore = useTournamentStore();
 const router = useRouter();
 const { smAndDown } = useDisplay();
 
@@ -325,6 +350,42 @@ const ecoDb = ref(null);
 
 // --- COMPUTED ---
 const profile = computed(() => store.playerProfile);
+
+const playerStatus = computed(() => {
+  const participation = store.participationInCurrentTournament;
+  const current = tournamentStore.currentTournament;
+
+  // Если игрок участвует в текущем событии
+  if (participation && current) {
+    return {
+      visible: true,
+      title: "Сейчас участвует",
+      subtitle: current.name,
+      icon: "mdi-play-circle",
+      color: "primary",
+      variant: "tonal",
+      tournamentId: current.id,
+    };
+  }
+
+  // Если не участвует, показываем последнее участие
+  const career = store.playerCareer;
+  if (career && career.length > 0) {
+    const lastTournament = career[career.length - 1]; // Карьера отсортирована по дате
+    return {
+      visible: true,
+      title: "Последнее участие",
+      subtitle: lastTournament.tournament_name,
+      icon: "mdi-history",
+      color: undefined,
+      variant: "outlined",
+      tournamentId: lastTournament.tournament_id,
+    };
+  }
+  
+  // Если нет данных, ничего не показываем
+  return { visible: false };
+});
 
 const processedOpenings = computed(() => {
   const openings = { white: [], black: [] };

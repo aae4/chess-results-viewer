@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useTheme, useDisplay } from 'vuetify';
 import { useRoute, useRouter } from 'vue-router';
 import { useTournamentStore } from '@/stores/tournamentStore';
@@ -72,6 +72,10 @@ const store = useTournamentStore();
 
 const drawer = ref(display.mdAndUp.value);
 const isDark = ref(theme.global.current.value.dark);
+
+onMounted(() => {
+  store.fetchCurrentTournament();
+});
 
 const toggleTheme = () => {
   const newTheme = isDark.value ? 'light' : 'dark';

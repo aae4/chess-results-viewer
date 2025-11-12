@@ -15,6 +15,8 @@ export const useTournamentStore = defineStore('tournaments', () => {
   const games = ref([]);
   const participants = ref([]);
   const isLoadingDetails = ref(false);
+  const currentTournament = ref(null);
+  const isLoadingCurrent = ref(false);
 
   // --- Состояние для отдельных страниц (игрок, партия) ---
   const activePlayer = ref(null);
@@ -91,6 +93,19 @@ export const useTournamentStore = defineStore('tournaments', () => {
     finally { isLoadingDetails.value = false; }
   }
 
+  async function fetchCurrentTournament() {
+    if (currentTournament.value) return; // Не загружаем повторно
+    isLoadingCurrent.value = true;
+    try {
+      const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+      currentTournament.value = await dbService.getCurrentTournament(today);
+    } catch (e) {
+      console.error("Ошибка при загрузке текущего турнира:", e);
+    } finally {
+      isLoadingCurrent.value = false;
+    }
+  }
+
   function clearActiveData() {
     activeTournament.value = null;
     standings.value = [];
@@ -108,6 +123,6 @@ export const useTournamentStore = defineStore('tournaments', () => {
     activePlayer, activePlayerGames, activeGame,
     error, isLoading, isLoadingList, isLoadingDetails,
     fetchAllTournaments, fetchTournamentData, fetchPlayerData, fetchGameData, crosstableData, statisticsData, ecoDatabase,
-    clearActiveData,
+    clearActiveData, currentTournament, isLoadingCurrent, fetchCurrentTournament,
   };
 });
