@@ -6,7 +6,7 @@ const wasmUrl = new URL("sql.js-httpvfs/dist/sql-wasm.wasm", import.meta.url);
 const isGithubPages = location.hostname.endsWith("github.io");
 
 const DB_URL = isGithubPages
-  ? "https://raw.githubusercontent.com/aae4/chess-results-viewer/multitournament_with_db/public/database.sqlite"
+  ? "https://raw.githubusercontent.com/aae4/chess-results-viewer/master/public/database.sqlite"
   : "/chess-results-viewer/database.sqlite";
 
 
