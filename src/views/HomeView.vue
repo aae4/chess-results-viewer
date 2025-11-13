@@ -99,26 +99,40 @@
 
     <!-- Блок 3: НАВИГАЦИЯ -->
     <div class="mt-8">
-       <v-row>
-          <v-col cols="12" md="6">
-             <v-sheet :to="{ name: 'TournamentsList' }" rounded="lg" class="nav-sheet fill-height">
-                <v-icon icon="mdi-trophy-outline" size="large" class="nav-sheet-icon"></v-icon>
-                <div>
-                   <div class="text-h6 font-weight-bold">Архив турниров</div>
-                   <p class="text-body-2 text-medium-emphasis mt-1">Результаты всех прошедших соревнований</p>
-                </div>
-             </v-sheet>
-          </v-col>
-          <v-col cols="12" md="6">
-             <v-sheet :to="{ name: 'PlayerList' }" rounded="lg" class="nav-sheet fill-height">
-                <v-icon icon="mdi-account-group-outline" size="large" class="nav-sheet-icon"></v-icon>
-                <div>
-                   <div class="text-h6 font-weight-bold">Все игроки</div>
-                   <p class="text-body-2 text-medium-emphasis mt-1">Рейтинги и статистика всех участников клуба</p>
-                </div>
-             </v-sheet>
-          </v-col>
-       </v-row>
+      <v-row>
+        <v-col cols="12" md="6">
+          <v-card
+             :to="{ name: 'TournamentsList' }"
+             rounded="lg"
+             class="nav-card fill-height"
+             hover
+           >
+            <div class="d-flex align-center pa-6">
+              <v-icon icon="mdi-trophy-outline" size="large" class="nav-card-icon"></v-icon>
+              <div>
+                <div class="text-h6 font-weight-bold">Архив турниров</div>
+                <p class="text-body-2 text-medium-emphasis mt-1">Результаты всех прошедших соревнований</p>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="6">
+          <v-card
+           :to="{ name: 'PlayerList' }"
+           rounded="lg"
+           class="nav-card fill-height"
+           hover
+          >
+            <div class="d-flex align-center pa-6">
+              <v-icon icon="mdi-account-group-outline" size="large" class="nav-card-icon"></v-icon>
+              <div>
+                <div class="text-h6 font-weight-bold">Все игроки</div>
+                <p class="text-body-2 text-medium-emphasis mt-1">Рейтинги и статистика всех участников клуба</p>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
     </div>
     
     <v-footer class="mt-12 d-flex flex-column pa-0">
@@ -199,22 +213,18 @@ const getGameResultChip = (result) => {
 }
 
 /* Стили для навигационных карточек */
-.nav-sheet {
-  display: flex;
-  align-items: center;
-  padding: 24px;
+.nav-card {
+  transition: all 0.2s ease-in-out !important; /* !important нужен, чтобы перебить стандартные transition карточки */
   border: 1px solid rgba(0,0,0,0.12);
-  transition: all 0.2s ease-in-out;
-  cursor: pointer;
   background-color: transparent;
 }
-.nav-sheet:hover {
+/* Эффект hover теперь управляется через пропс 'hover' у v-card, но мы можем его кастомизировать */
+.nav-card:hover {
    transform: translateY(-5px);
-   box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+   box-shadow: 0 8px 25px rgba(0,0,0,0.08) !important;
    border-color: rgba(var(--v-theme-primary), 0.6);
-   background-color: rgba(var(--v-theme-surface));
 }
-.nav-sheet-icon {
+.nav-card-icon {
   margin-right: 20px;
   color: var(--v-theme-primary);
 }
