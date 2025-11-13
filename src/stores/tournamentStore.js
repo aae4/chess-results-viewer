@@ -18,6 +18,12 @@ export const useTournamentStore = defineStore('tournaments', () => {
   const currentTournament = ref(null);
   const isLoadingCurrent = ref(false);
 
+  // --- Состояние главной страницы ---
+  const currentTournamentStandings = ref([]);
+  const recentGames = ref([]);
+  const nextRoundInfo = ref(null);
+  const isLoadingHomepage = ref(false);
+
   // --- Состояние для отдельных страниц (игрок, партия) ---
   const activePlayer = ref(null);
   const activePlayerGames = ref([]);
@@ -28,7 +34,47 @@ export const useTournamentStore = defineStore('tournaments', () => {
   
   const isLoading = computed(() => isLoadingList.value || isLoadingDetails.value);
 
+  const latestFinishedTournament = ref(null);
+  const tournamentPodium = ref([]);
+
   // === ОСНОВНЫЕ ДЕЙСТВИЯ ===
+
+  /**
+   * Загружает все необходимые данные для дашборда на главной странице.
+   */
+  async function fetchHomepageDashboardData() {
+    if (recentGames.value.length > 0) return; // Не перезагружаем, если данные уже есть
+
+    isLoadingHomepage.value = true;
+    error.value = null;
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const tournament = await dbService.getCurrentTournament(today);
+
+      if (!tournament) {
+        // Если нет активного турнира, просто выходим
+        currentTournament.value = null;
+        return;
+      }
+      currentTournament.value = tournament;
+
+      const [standingsData, gamesData, roundData] = await Promise.all([
+        dbService.getTournamentStandings(tournament.id),
+        dbService.getRecentGames(tournament.id, 5), // Запрашиваем 5 последних партий
+        dbService.getNextRoundInfo(tournament.id)   // Запрашиваем инфо о след. раунде
+      ]);
+
+      currentTournamentStandings.value = standingsData;
+      recentGames.value = gamesData;
+      nextRoundInfo.value = roundData;
+
+    } catch (e) {
+      error.value = e.message;
+      console.error("Ошибка при загрузке данных для дашборда:", e);
+    } finally {
+      isLoadingHomepage.value = false;
+    }
+  }
 
   async function fetchAllTournaments() {
     isLoadingList.value = true;
@@ -106,6 +152,37 @@ export const useTournamentStore = defineStore('tournaments', () => {
     }
   }
 
+
+  /** Загружает информацию о последнем завершенном турнире и его призерах */
+  async function fetchHomepageData() {
+    if (latestFinishedTournament.value) return; // Загружаем один раз
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const latest = await dbService.getLatestFinishedTournament(today);
+      if (latest) {
+        latestFinishedTournament.value = latest;
+        tournamentPodium.value = await dbService.getTournamentPodium(latest.id);
+      }
+    } catch (e) {
+      console.error("Ошибка при загрузке данных для главной страницы:", e);
+    }
+  }
+
+  /** Загружает информацию о последнем завершенном турнире и его призерах (для страницы "О клубе" или архива) */
+  async function fetchHallOfFameData() {
+    if (latestFinishedTournament.value) return; 
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const latest = await dbService.getLatestFinishedTournament(today);
+      if (latest) {
+        latestFinishedTournament.value = latest;
+        tournamentPodium.value = await dbService.getTournamentPodium(latest.id);
+      }
+    } catch (e) {
+      console.error("Ошибка при загрузке данных для Зала Славы:", e);
+    }
+  }
+
   function clearActiveData() {
     activeTournament.value = null;
     standings.value = [];
@@ -123,6 +200,7 @@ export const useTournamentStore = defineStore('tournaments', () => {
     activePlayer, activePlayerGames, activeGame,
     error, isLoading, isLoadingList, isLoadingDetails,
     fetchAllTournaments, fetchTournamentData, fetchPlayerData, fetchGameData, crosstableData, statisticsData, ecoDatabase,
-    clearActiveData, currentTournament, isLoadingCurrent, fetchCurrentTournament,
+    clearActiveData, currentTournament, isLoadingCurrent, fetchCurrentTournament, latestFinishedTournament,
+    tournamentPodium, fetchHomepageData, fetchHomepageDashboardData, fetchHallOfFameData, currentTournamentStandings, recentGames, nextRoundInfo
   };
 });

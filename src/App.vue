@@ -13,8 +13,15 @@
       <v-divider></v-divider>
       <v-list nav>
         <v-list-item
+          prepend-icon="mdi-home-outline"
+          title="Главная"
+          value="home"
+          :to="{ name: 'Home' }"
+          rounded="lg"
+        ></v-list-item>
+        <v-list-item
           prepend-icon="mdi-trophy-variant-outline"
-          title="Все турниры"
+          title="Архив турниров"
           value="tournaments"
           :to="{ name: 'TournamentsList' }"
           rounded="lg"
@@ -24,6 +31,14 @@
           title="Все игроки"
           value="players"
           :to="{ name: 'PlayerList' }"
+          rounded="lg"
+        ></v-list-item>
+        <v-divider class="my-2"></v-divider>
+        <v-list-item
+          prepend-icon="mdi-information-outline"
+          title="О клубе"
+          value="about"
+          :to="{ name: 'About' }"
           rounded="lg"
         ></v-list-item>
       </v-list>
@@ -63,6 +78,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useTheme, useDisplay } from 'vuetify';
 import { useRoute, useRouter } from 'vue-router';
 import { useTournamentStore } from '@/stores/tournamentStore';
+import AppFooter from '@/components/AppFooter.vue';
 
 const theme = useTheme();
 const display = useDisplay();
@@ -84,7 +100,7 @@ const toggleTheme = () => {
 };
 
 const goBack = () => router.back();
-const goHome = () => router.push({ name: 'TournamentsList' });
+const goHome = () => router.push({ name: 'Home' });
 
 const showBackButton = computed(() => {
   const deepPages = [
@@ -113,7 +129,7 @@ const currentTitle = computed(() => {
     case 'GlobalPlayer': 
       return store.playerProfile?.canonical_name || 'Профиль игрока';
     default:
-      return 'Chess Results Viewer';
+      return 'Шахматы на Проспекте Мира, 43';
   }
 });
 </script>

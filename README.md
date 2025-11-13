@@ -65,7 +65,7 @@
 
 3.  **Запустите сервер для разработки:**
     ```bash
-    npm run dev
+    npm run dev (npm run dev -- --host)
     ```
     Приложение будет доступно по адресу `http://localhost:5173`.
 

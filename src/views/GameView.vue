@@ -1,6 +1,6 @@
 <template>
 <div>
-  <!-- Состояния загрузки и ошибки (без изменений) -->
+  <!-- Состояния загрузки и ошибки -->
   <div v-if="store.isLoadingDetails && !game" class="text-center pa-10">
     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
     <div class="mt-4 text-medium-emphasis">Загрузка партии...</div>
@@ -151,6 +151,7 @@ const loadGameIntoBoard = (gameData) => {
   if (!boardAPI || !gameData?.pgn_moves) return;
   try {
     boardConfig.orientation = 'white';
+    console.log(gameData.pgn_moves)
     boardAPI.loadPgn(gameData.pgn_moves);
     const tempGame = new Chess();
     tempGame.loadPgn(gameData.pgn_moves);
@@ -249,7 +250,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 </script>
 
 <style scoped>
-/* Стили из предыдущей, рабочей версии */
 .player-info { display: flex; align-items: center; }
 .header-panel { flex-shrink: 0; border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12); }
 .controls-panel { background-color: transparent; }

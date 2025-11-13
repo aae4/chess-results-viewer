@@ -365,37 +365,138 @@ export const dbService = {
     WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
   `, [playerId, playerId, playerId, playerId, playerId]),
 
-/** 
- * Находит самый релевантный "текущий" турнир по трехуровневой логике.
- * Приоритет: 1. Идет сейчас -> 2. Скоро начнется -> 3. Недавно завершился.
- */
-getCurrentTournament: (todayDate) => query(`
-  SELECT * FROM (
-    -- Приоритет 1: Турнир идет прямо сейчас
-    SELECT *, 1 as priority, 'live' as status
-    FROM tournaments
-    WHERE ? BETWEEN start_date AND end_date
+  /** 
+   * Находит самый релевантный "текущий" турнир по трехуровневой логике.
+   * Приоритет: 1. Идет сейчас -> 2. Скоро начнется -> 3. Недавно завершился.
+   */
+  getCurrentTournament: (todayDate) => query(`
+    SELECT * FROM (
+      -- Приоритет 1: Турнир идет прямо сейчас
+      SELECT *, 1 as priority, 'live' as status
+      FROM tournaments
+      WHERE ? BETWEEN start_date AND end_date
+      LIMIT 1
+    )
+    UNION ALL
+    SELECT * FROM (
+      -- Приоритет 2: Ближайший предстоящий турнир
+      SELECT *, 2 as priority, 'upcoming' as status
+      FROM tournaments
+      WHERE start_date > ?
+      ORDER BY start_date ASC
+      LIMIT 1
+    )
+    UNION ALL
+    SELECT * FROM (
+      -- Приоритет 3: Самый последний завершившийся турнир
+      SELECT *, 3 as priority, 'recent' as status
+      FROM tournaments
+      WHERE end_date < ?
+      ORDER BY end_date DESC
+      LIMIT 1
+    )
+    ORDER BY priority ASC
     LIMIT 1
-  )
-  UNION ALL
-  SELECT * FROM (
-    -- Приоритет 2: Ближайший предстоящий турнир
-    SELECT *, 2 as priority, 'upcoming' as status
-    FROM tournaments
-    WHERE start_date > ?
-    ORDER BY start_date ASC
-    LIMIT 1
-  )
-  UNION ALL
-  SELECT * FROM (
-    -- Приоритет 3: Самый последний завершившийся турнир
-    SELECT *, 3 as priority, 'recent' as status
+  `, [todayDate, todayDate, todayDate]).then(res => res[0]),
+
+  /** Находит самый последний ЗАВЕРШЕННЫЙ турнир */
+  getLatestFinishedTournament: (todayDate) => query(`
+    SELECT id, name
     FROM tournaments
     WHERE end_date < ?
     ORDER BY end_date DESC
     LIMIT 1
-  )
-  ORDER BY priority ASC
-  LIMIT 1
-`, [todayDate, todayDate, todayDate]).then(res => res[0]),
+  `, [todayDate]).then(res => res[0]),
+
+  /** Находит топ-3 игроков для указанного турнира */
+  getTournamentPodium: (tournamentId) => query(`
+    SELECT p.id as player_id, p.canonical_name, perf.final_rank
+    FROM player_performances perf
+    JOIN players p ON p.id = perf.player_id
+    WHERE perf.tournament_id = ? AND perf.final_rank IN (1, 2, 3)
+    ORDER BY perf.final_rank ASC
+  `, [tournamentId]),
+
+  /**
+   * Получает последние сыгранные партии из турнира.
+   * @param {number} tournamentId - ID турнира.
+   * @param {number} limit - Количество партий для возврата.
+   * @returns {Promise<Array>} - Массив объектов партий.
+   */
+  getRecentGames: (tournamentId, limit = 5) => {
+    return query(`
+      SELECT
+        g.id,
+        g.result,
+        white_player.canonical_name AS white_player_name,
+        black_player.canonical_name AS black_player_name
+      FROM games AS g
+      JOIN player_performances AS pp_white ON g.white_performance_id = pp_white.id
+      JOIN players AS white_player ON pp_white.player_id = white_player.id
+      JOIN player_performances AS pp_black ON g.black_performance_id = pp_black.id
+      JOIN players AS black_player ON pp_black.player_id = black_player.id
+      WHERE g.tournament_id = ? 
+      AND g.result is not null
+      ORDER BY 
+        CAST(g.round AS INTEGER) DESC, -- Сортируем по номеру тура (сначала последние)
+        g.id DESC                      -- В рамках одного тура, последние добавленные партии будут первыми
+      LIMIT ?
+    `, [tournamentId, limit])
+    .then(games => games.map(game => ({
+      // Трансформируем плоский результат SQL в удобную вложенную структуру для фронтенда
+      id: game.id,
+      result: game.result,
+      white_player: { name: game.white_player_name },
+      black_player: { name: game.black_player_name }
+    })));
+  },
+
+  /**
+   * Находит самый последний запланированный тур и, если он еще не прошел, показывает его.
+   * @param {number} tournamentId - ID турнира.
+   * @returns {Promise<Object>} - Объект с информацией о следующем туре.
+   */
+  getNextRoundInfo: async (tournamentId) => {
+    // Шаг 1: Находим одну единственную игру с самым большим номером тура.
+    const lastRoundGame = await query(`
+      SELECT round, game_date
+      FROM games
+      WHERE tournament_id = ?
+      ORDER BY CAST(round AS INTEGER) DESC
+      LIMIT 1
+    `, [tournamentId]).then(res => res[0]);
+
+    // Если игр в турнире еще нет, возвращаем заглушку.
+    if (!lastRoundGame) {
+      return {
+        name: 'Следующий тур',
+        date: 'Информация скоро появится',
+        time: ''
+      };
+    }
+
+    // Шаг 2: Сравниваем дату найденной игры с сегодняшним днем.
+    const gameDate = new Date(lastRoundGame.game_date);
+    const today = new Date();
+    
+    // Убираем время из 'сегодня', чтобы корректно сравнивать только даты.
+    today.setHours(0, 0, 0, 0);
+
+    // Если дата игры - сегодня или в будущем, значит, это и есть анонс.
+    if (gameDate >= today) {
+      return {
+        name: `${lastRoundGame.round}-й тур`,
+        date: gameDate.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        time: '(согласно расписанию)'
+      };
+    }
+    
+    // Шаг 3: Если дата последней игры уже в прошлом, значит, анонса пока нет.
+    return {
+      name: 'Следующий тур',
+      date: 'Информация скоро появится',
+      time: ''
+    };
+  },
+
 };
