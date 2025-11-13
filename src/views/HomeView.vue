@@ -163,7 +163,7 @@ const getGameResultChip = (result) => {
 </script>
 
 <style scoped>
-.hero-section { position: relative; overflow: hidden; background-image: url('./hero-bg.jpg'); background-size: cover; background-position: center; }
+.hero-section { position: relative; overflow: hidden; background-image: url('https://raw.githubusercontent.com/aae4/chess-results-viewer/master/public/hero-bg.jpg'); background-size: cover; background-position: center; }
 .hero-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(var(--v-theme-surface), 0.75); backdrop-filter: blur(5px); }
 .content-wrapper { position: relative; z-index: 1; }
 .sub-hero-card { max-width: 450px; backdrop-filter: blur(10px); background: rgba(var(--v-theme-surface), 0.85); transition: all 0.2s ease-in-out; }
