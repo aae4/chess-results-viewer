@@ -18,11 +18,19 @@
         <!-- Левая колонка с доской -->
         <div class="board-column">
           <v-sheet class="d-flex flex-column" border rounded="lg">
-            <PlayerInfoPanel :player="topPlayer" />
+            <PlayerInfoPanel 
+              :player="topPlayer" 
+              :captured-pieces="netCapturedPieces[topPlayer.color]" 
+              :advantage="currentGameState.advantage[topPlayer.color]"
+            />
             <div class="px-2 flex-grow-1">
               <TheChessboard :board-config="boardConfig" reactive-config @board-created="onBoardCreated" />
             </div>
-            <PlayerInfoPanel :player="bottomPlayer" />
+            <PlayerInfoPanel 
+              :player="bottomPlayer" 
+              :captured-pieces="netCapturedPieces[bottomPlayer.color]"
+              :advantage="currentGameState.advantage[bottomPlayer.color]"
+            />
           </v-sheet>
         </div>
 
@@ -82,11 +90,19 @@
       <!-- ====================================================== -->
       <div v-else class="mobile-layout">
         <div class="board-area">
-          <PlayerInfoPanel :player="topPlayer" />
+          <PlayerInfoPanel 
+            :player="topPlayer" 
+            :captured-pieces="netCapturedPieces[topPlayer.color]"
+            :advantage="currentGameState.advantage[topPlayer.color]"
+          />
           <div class="px-1">
             <TheChessboard :board-config="boardConfig" reactive-config @board-created="onBoardCreated" />
           </div>
-          <PlayerInfoPanel :player="bottomPlayer" />
+          <PlayerInfoPanel 
+            :player="bottomPlayer" 
+            :captured-pieces="netCapturedPieces[bottomPlayer.color]"
+            :advantage="currentGameState.advantage[bottomPlayer.color]"
+          />
         </div>
 
         <div class="info-area">
@@ -153,6 +169,7 @@ const moves = ref([]);
 const currentPly = ref(0);
 const scrollWrapper = ref(null);
 const movesContainer = ref(null);
+const gameStates = ref([]); // Массив состояний для каждого полухода
 
 const boardConfig = reactive({
   orientation: 'white',
@@ -187,6 +204,7 @@ const loadGameIntoBoard = (gameData) => {
     const tempGame = new Chess();
     tempGame.loadPgn(gameData.pgn_moves);
     moves.value = tempGame.history({ verbose: true });
+    analyzeGameHistory(gameData.pgn_moves);
     toStart();
   } catch (e) {
     console.error("Invalid PGN:", e);
@@ -194,6 +212,109 @@ const loadGameIntoBoard = (gameData) => {
     boardAPI.resetBoard();
   }
 };
+
+const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+
+function analyzeGameHistory(pgn) {
+  const chess = new Chess();
+  chess.loadPgn(pgn);
+
+  const history = chess.history({ verbose: true });
+  moves.value = history; // Сохраняем ходы для списка
+  
+  const states = [];
+  const initialCaptured = { w: [], b: [] };
+  
+  // Состояние 0: Начальная позиция
+  states.push({
+    captured: { w: [], b: [] },
+    advantage: { w: 0, b: 0 },
+  });
+
+  const tempChess = new Chess();
+  history.forEach(move => {
+    tempChess.move(move.san);
+    
+    const captured = {
+      w: [...(states[states.length - 1].captured.w)],
+      b: [...(states[states.length - 1].captured.b)],
+    };
+    
+    // Если на этом ходу была съедена фигура
+    if (move.captured) {
+      const capturedPiece = { type: move.captured, color: move.color === 'w' ? 'b' : 'w' };
+      if (capturedPiece.color === 'w') {
+        captured.w.push(capturedPiece);
+      } else {
+        captured.b.push(capturedPiece);
+      }
+    }
+    
+    // Считаем материальный баланс
+    const whiteMaterial = captured.b.reduce((sum, p) => sum + pieceValues[p.type], 0);
+    const blackMaterial = captured.w.reduce((sum, p) => sum + pieceValues[p.type], 0);
+    
+    states.push({
+      captured,
+      advantage: {
+        w: whiteMaterial > blackMaterial ? whiteMaterial - blackMaterial : 0,
+        b: blackMaterial > whiteMaterial ? blackMaterial - whiteMaterial : 0,
+      }
+    });
+  });
+
+  gameStates.value = states;
+}
+
+const netCapturedPieces = computed(() => {
+  const currentCaptured = currentGameState.value.captured;
+  if (!currentCaptured) return { w: [], b: [] };
+
+  const pieceTypes = ['p', 'n', 'b', 'r', 'q'];
+  
+  // Считаем, сколько фигур каждого типа съели белые (это черные фигуры)
+  const whiteCaptureCounts = pieceTypes.reduce((acc, type) => {
+    acc[type] = currentCaptured.b.filter(p => p.type === type).length;
+    return acc;
+  }, {});
+  
+  // Считаем, сколько фигур каждого типа съели черные (это белые фигуры)
+  const blackCaptureCounts = pieceTypes.reduce((acc, type) => {
+    acc[type] = currentCaptured.w.filter(p => p.type === type).length;
+    return acc;
+  }, {});
+
+  const netWhiteCaptures = []; // Фигуры для панели белых (съеденные ими черные)
+  const netBlackCaptures = []; // Фигуры для панели черных (съеденные ими белые)
+
+  pieceTypes.forEach(type => {
+    const diff = whiteCaptureCounts[type] - blackCaptureCounts[type];
+    if (diff > 0) { // Белые съели больше фигур этого типа
+      for (let i = 0; i < diff; i++) {
+        netWhiteCaptures.push({ type, color: 'b' });
+      }
+    } else if (diff < 0) { // Черные съели больше
+      for (let i = 0; i < -diff; i++) {
+        netBlackCaptures.push({ type, color: 'w' });
+      }
+    }
+  });
+
+  // Сортируем фигуры по ценности для красивого отображения
+  const sortValue = { q: 5, r: 4, b: 3, n: 2, p: 1 };
+  netWhiteCaptures.sort((a, b) => sortValue[a.type] - sortValue[b.type]);
+  netBlackCaptures.sort((a, b) => sortValue[a.type] - sortValue[b.type]);
+
+  return { w: netWhiteCaptures, b: netBlackCaptures };
+});
+
+const currentGameState = computed(() => {
+  console.log(gameStates.value[currentPly.value])
+  return gameStates.value[currentPly.value] || {
+    captured: { w: [], b: [] },
+    advantage: { w: 0, b: 0 },
+  };
+});
 
 watch(game, (newGame) => {
   if (newGame && boardAPI) {
@@ -238,15 +359,16 @@ const turns = computed(() => {
 
 const topPlayer = computed(() => {
   if (!game.value) return {};
-  return boardConfig.orientation === 'white'
-    ? { name: game.value.black_name, rating: game.value.black_rating }
-    : { name: game.value.white_name, rating: game.value.white_rating };
+  return boardConfig.orientation === 'white' 
+    ? { name: game.value.black_name, rating: game.value.black_rating, color: 'b' }
+    : { name: game.value.white_name, rating: game.value.white_rating, color: 'w' };
 });
+
 const bottomPlayer = computed(() => {
   if (!game.value) return {};
   return boardConfig.orientation === 'white'
-    ? { name: game.value.white_name, rating: game.value.white_rating }
-    : { name: game.value.black_name, rating: game.value.black_rating };
+    ? { name: game.value.white_name, rating: game.value.white_rating, color: 'w' }
+    : { name: game.value.black_name, rating: game.value.black_rating, color: 'b' };
 });
 
 const toStart = () => { currentPly.value = 0; boardAPI?.viewHistory(0); scrollToMove(); };
