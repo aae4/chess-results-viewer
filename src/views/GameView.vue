@@ -91,14 +91,15 @@
 
         <div class="info-area">
           <v-toolbar flat density="compact" color="transparent">
+            
+            <v-btn @click="flipBoard" variant="text" icon="mdi-rotate-3d-variant"></v-btn>
+            <v-spacer></v-spacer>
             <v-btn-group variant="text" density="comfortable">
-              <v-btn @click="toStart" icon="mdi-skip-previous"></v-btn>
+              <!-- <v-btn @click="toStart" icon="mdi-skip-previous"></v-btn> -->
               <v-btn @click="back" icon="mdi-chevron-left"></v-btn>
               <v-btn @click="next" icon="mdi-chevron-right"></v-btn>
-              <v-btn @click="toEnd" icon="mdi-skip-next"></v-btn>
+              <!-- <v-btn @click="toEnd" icon="mdi-skip-next"></v-btn> -->
             </v-btn-group>
-            <v-spacer></v-spacer>
-            <v-btn @click="flipBoard" variant="text" icon="mdi-rotate-3d-variant"></v-btn>
           </v-toolbar>
           <v-divider></v-divider>
           
