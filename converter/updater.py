@@ -74,7 +74,7 @@ def find_main_table(soup, keywords):
         h2_text = h2.get_text(strip=True).lower()
         for keyword in keywords:
             if keyword in h2_text:
-                element = h2.find_next_sibling()
+                element = h2.find_next("table")
                 if element and element.name == 'table': return element
     return None
 
@@ -287,11 +287,93 @@ async def get_full_player_data(session, player_base_data, semaphore):
                 'board': cells[1].get_text(strip=True),
                 'opponent_name': cells[4].get_text(strip=True),
                 'result': result_text if result_text and result_text != '-' else None,
-                'color': color # <<<< Сохраняем найденный цвет
+                'color': color
             })
     player_base_data['games'] = games
     return player_base_data
+
+def is_technical(game, pgn_moves):
+    if game['white_name'] == 'bye' or game['black_name'] == 'bye': return True
+    if (game['result'] == '--+' or game['result'] == '+--') and (not pgn_moves):
+        return True
+    return False
+    # return game['result'] == '- - +' or game['result'] == '+ - -' or game['white_name'] == 'bye' or game['black_name'] == 'bye'
+
+def create_header_map(header_row):
+    """Создает карту 'название заголовка' -> 'индекс колонки'."""
+    return {th.get_text(strip=True).lower(): i for i, th in enumerate(header_row.select('th, td'))}
+
+def parse_round_page(html_content, round_number):
+    """
+    Парсит страницу одного тура и извлекает все партии.
+    """
+    games = []
+    if not html_content: return games
     
+    soup = BeautifulSoup(html_content, 'lxml')
+
+    table = find_main_table(soup, ['пары/результаты', 'pairings/results'])
+    
+    if not table: return games
+
+    header_row = table.find('tr', class_='CRg1b')
+    if not header_row: return games
+    
+    header_map = create_header_map(header_row)
+    # Ищем ключи гибко, так как названия могут отличаться
+    KEY_BOARD = next((k for k in header_map if k in ['bo.', 'до.']), None)
+    KEY_WHITE = next((k for k in header_map if k == 'white'), None)
+    KEY_BLACK = next((k for k in header_map if k == 'black'), None)
+    KEY_RESULT = next((k for k in header_map if k == 'результат'), None)
+
+    if not all([KEY_BOARD, KEY_WHITE, KEY_BLACK, KEY_RESULT]): 
+        logging.warning(f"Не удалось найти все необходимые заголовки в таблице тура {round_number}")
+        return games
+
+    for row in table.find_all('tr', class_=['CRg1', 'CRg2']):
+        cells = row.find_all('td')
+
+        white_player_name = cells[header_map[KEY_WHITE]].get_text(strip=True)
+        black_player_name = cells[header_map[KEY_BLACK]].get_text(strip=True)
+        result = cells[header_map[KEY_RESULT]].get_text(strip=True)
+        if result: result = result.replace(" ", "")
+
+        # Пропускаем строки без пары
+        if white_player_name == 'без пары' or black_player_name == 'без пары': continue
+
+        if white_player_name and black_player_name:
+            games.append({
+                'round': str(round_number),
+                'board': cells[header_map[KEY_BOARD]].get_text(strip=True),
+                'result': result,
+                'white_name': white_player_name,
+                'black_name': black_player_name,
+            })
+    return games
+
+async def scrape_all_rounds_data(session, tnr_id, rounds_count, semaphore):
+    """
+    Асинхронно собирает данные со страниц всех туров.
+    """
+    if not rounds_count or rounds_count <= 0: return {}
+
+    tasks = []
+    for round_num in range(1, rounds_count + 1):
+        url = f"https://s2.chess-results.com/tnr{tnr_id}.aspx?lan=11&art=2&rd={round_num}"
+        # Оборачиваем fetch и parse в одну корутину для каждой задачи
+        async def fetch_and_parse(session, url, round_num, semaphore):
+            async with semaphore:
+                html = await fetch_with_retries(session, url)
+            return parse_round_page(html, round_num)
+        
+        tasks.append(fetch_and_parse(session, url, round_num, semaphore))
+
+    all_games = []
+    all_rounds_games = await asyncio.gather(*tasks)
+    for round_games in all_rounds_games:
+        all_games.extend(round_games)
+
+    return all_games
 # ОСНОВНОЙ ПРОЦЕСС ОБНОВЛЕНИЯ ---
 
 async def main(tnr_id):
@@ -303,6 +385,7 @@ async def main(tnr_id):
 
     try:
         async with aiohttp.ClientSession() as session:
+            semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
             # --- ЭТАП 1: ИЗВЛЕЧЕНИЕ (EXTRACT) ---
             logging.info("Этап 1: Извлечение данных...")
             
@@ -313,17 +396,22 @@ async def main(tnr_id):
             
             # Параллельно грузим расписание и парсим games.txt
             schedule_task = asyncio.create_task(parse_schedule(session, tnr_id))
+            schedule_map, rounds_count = await schedule_task # Дожидаемся загрузки расписания
+
             pgn_map = parse_games_txt()
+
+            # Cобираем данные со страниц каждого туров
+            scraped_games = await scrape_all_rounds_data(session, tnr_id, rounds_count, semaphore)
+            if rounds_count > 0 and not scraped_games:
+                 logging.warning(f"Не удалось собрать данные о партиях со страниц туров для tnr{tnr_id}")
             
             tournament_cr_details = parse_cr_details_table(main_soup.find('td', class_='CR0').find('table'))
             participants_base = parse_participants_and_games(main_soup, main_url, tnr_id)
             if not participants_base: raise Exception("Не удалось найти список участников.")
 
-            semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
             participant_tasks = [get_full_player_data(session, p, semaphore) for p in participants_base]
             full_participants_data = await asyncio.gather(*participant_tasks)
             
-            schedule_map, rounds_count = await schedule_task # Дожидаемся загрузки расписания
 
             # --- ЭТАП 2: ЗАГРУЗКА И ОБНОВЛЕНИЕ (LOAD / UPDATE) ---
             logging.info("Этап 2: Обновление базы данных...")
@@ -379,58 +467,114 @@ async def main(tnr_id):
                 perf_map_by_key[match_key] = perf_id
                 perf_map_by_player_id[player_id] = perf_id
 
-            # UPSERT Партий
             processed_games = set()
-            all_scraped_games = []
-            for p_data in full_participants_data:
-                player_key = normalize_player_name_key(p_data['name'])
-                
-                for game_from_cr in p_data.get('games', []):
-                    # Уникальный ключ для дедупликации
-                    game_unique_key = (tournament_id, game_from_cr['round'], game_from_cr['board'])
-                    if not game_from_cr.get('round') or not game_from_cr.get('board') or game_unique_key in processed_games:
-                        continue
-                        
-                    opponent_key = normalize_player_name_key(game_from_cr['opponent_name'])
-                    
-                    # Определяем, кто играл каким цветом
-                    if game_from_cr['color'] == 'w':
-                        white_key, black_key = player_key, opponent_key
-                    elif game_from_cr['color'] == 'b':
-                        white_key, black_key = opponent_key, player_key
-                    else:
-                        continue # Пропускаем, если цвет не определен
+            for game_from_site in scraped_games:
+                game_unique_key = (tournament_id, game_from_site['round'], game_from_site['board'])
+                if game_unique_key in processed_games:
+                    logging.warning(f"Найдена дублирующаяся игра {game_unique_key} пропускаю")
+                    continue
 
+                white_key = normalize_player_name_key(game_from_site['white_name'])
+                black_key = normalize_player_name_key(game_from_site['black_name'])
+
+                if game_from_site['black_name'] == 'bye':
+                    white_perf_id = perf_map_by_key.get(white_key)
+                    black_perf_id = None
+                else:
                     white_perf_id = perf_map_by_key.get(white_key)
                     black_perf_id = perf_map_by_key.get(black_key)
 
-                    if not (white_perf_id and black_perf_id): continue
+                    if not (white_perf_id and black_perf_id):
+                        logging.warning(f"Не найдены ID для игроков в партии {white_key} vs {black_key} в tnr{tnr_id}. Партия пропущена.")
+                        continue
 
-                    # Ищем PGN и дату
-                    pgn_game_key = tuple(sorted((white_key, black_key)))
-                    pgn_moves = pgn_map.get(pgn_game_key)
-                    game_date = schedule_map.get(game_from_cr['round'])
-                    
-                    # UPSERT логика
-                    cursor.execute("SELECT id FROM games WHERE white_performance_id = ? AND black_performance_id = ? AND tournament_id = ?",
-                                   (white_perf_id, black_perf_id, tournament_id))
-                    existing_game = cursor.fetchone()
+                # Ищем PGN для этой пары
+                pgn_game_key = tuple(sorted((white_key, black_key)))
+                pgn_moves = pgn_map.get(pgn_game_key)
+                game_date = schedule_map[game_from_site['round']]
+                result = game_from_site['result']
+                is_tech = is_technical(game_from_site, pgn_moves)
 
-                    if existing_game:
-                        cursor.execute("""
-                            UPDATE games SET 
-                                result = ?, 
-                                pgn_moves = COALESCE(?, pgn_moves), 
-                                game_date = COALESCE(?, game_date)
-                            WHERE id = ?
-                        """, (game_from_cr['result'], pgn_moves, game_date, existing_game[0]))
-                    else:
-                        cursor.execute("""
-                            INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, pgn_moves, game_date) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (tournament_id, white_perf_id, black_perf_id, game_from_cr['round'], game_from_cr['board'], game_from_cr['result'], pgn_moves, game_date))
+                # UPSERT логика
+                cursor.execute("SELECT id FROM games WHERE white_performance_id = ? AND black_performance_id = ? AND tournament_id = ?",
+                               (white_perf_id, black_perf_id, tournament_id))
+                existing_game = cursor.fetchone()
+
+                if existing_game:
+                    cursor.execute("""
+                        UPDATE games SET 
+                            result = ?, 
+                            pgn_moves = COALESCE(?, pgn_moves), 
+                            game_date = COALESCE(?, game_date),
+                            is_technical = ?
+                        WHERE id = ?
+                    """, (result, pgn_moves, game_date, is_tech, existing_game[0]))
+                else:
+                    cursor.execute("""
+                        INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, pgn_moves, game_date, is_technical) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (tournament_id, white_perf_id, black_perf_id, game_from_site['round'], game_from_site['board'], result, pgn_moves, game_date, is_tech))
+                
+                processed_games.add(game_unique_key) # Помечаем партию как обработанную
+            # # UPSERT Партий
+            # processed_games = set()
+            # all_scraped_games = []
+            # for p_data in full_participants_data:
+            #     player_key = normalize_player_name_key(p_data['name'])
+                
+            #     for game_from_cr in p_data.get('games', []):
+            #         print(game_from_cr)
+            #         # Уникальный ключ для дедупликации
+            #         game_unique_key = (tournament_id, game_from_cr['round'], game_from_cr['board'])
+            #         if not game_from_cr.get('round') or not game_from_cr.get('board') or game_unique_key in processed_games:
+            #             continue
+                        
+            #         opponent_key = normalize_player_name_key(game_from_cr['opponent_name'])
                     
-                    processed_games.add(game_unique_key) # Помечаем партию как обработанную
+            #         # Определяем, кто играл каким цветом
+            #         if game_from_cr['color'] == 'w':
+            #             white_key, black_key = player_key, opponent_key
+            #         elif game_from_cr['color'] == 'b':
+            #             white_key, black_key = opponent_key, player_key
+            #         else:
+            #             continue # Пропускаем, если цвет не определен
+
+            #         white_perf_id = perf_map_by_key.get(white_key)
+            #         black_perf_id = perf_map_by_key.get(black_key)
+
+            #         if not (white_perf_id and black_perf_id): continue
+
+            #         # Ищем PGN и дату
+            #         pgn_game_key = tuple(sorted((white_key, black_key)))
+            #         pgn_moves = pgn_map.get(pgn_game_key)
+            #         game_date = schedule_map.get(game_from_cr['round'])
+                    
+            #         # UPSERT логика
+            #         cursor.execute("SELECT id FROM games WHERE white_performance_id = ? AND black_performance_id = ? AND tournament_id = ?",
+            #                        (white_perf_id, black_perf_id, tournament_id))
+            #         existing_game = cursor.fetchone()
+
+            #         if existing_game:
+            #             print("UPSERT")
+            #             print(game_from_cr['result'])
+            #             print("---")
+            #             cursor.execute("""
+            #                 UPDATE games SET 
+            #                     result = ?, 
+            #                     pgn_moves = COALESCE(?, pgn_moves), 
+            #                     game_date = COALESCE(?, game_date)
+            #                 WHERE id = ?
+            #             """, (game_from_cr['result'], pgn_moves, game_date, existing_game[0]))
+            #         else:
+            #             print("INSERT")
+            #             print(game_from_cr['result'])
+            #             print("---")
+            #             cursor.execute("""
+            #                 INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, pgn_moves, game_date) 
+            #                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            #             """, (tournament_id, white_perf_id, black_perf_id, game_from_cr['round'], game_from_cr['board'], game_from_cr['result'], pgn_moves, game_date))
+                    
+            #         processed_games.add(game_unique_key) # Помечаем партию как обработанную
 
             conn.commit()
             logging.info(f"--- Обновление для tnr{tnr_id} успешно завершено ---")

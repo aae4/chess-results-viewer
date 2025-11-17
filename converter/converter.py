@@ -64,10 +64,11 @@ CREATE TABLE IF NOT EXISTS games (
     id                    INTEGER PRIMARY KEY AUTOINCREMENT,
     tournament_id         INTEGER NOT NULL,
     white_performance_id  INTEGER NOT NULL,
-    black_performance_id  INTEGER NOT NULL,
+    black_performance_id  INTEGER,
     round                 TEXT,
     board                 TEXT,
     result                TEXT,
+    is_technical          BOOLEAN DEFAULT 0,
     game_date             TEXT,
     eco_code              TEXT,
     pgn_moves             TEXT,
@@ -83,6 +84,14 @@ CREATE INDEX IF NOT EXISTS idx_performances_player_tournament ON player_performa
 CREATE INDEX IF NOT EXISTS idx_games_tournament_id ON games(tournament_id);
 CREATE INDEX IF NOT EXISTS idx_tournaments_start_date ON tournaments(start_date);
 """
+
+# def is_technical(game):
+#     return game['result'] == '- - +' or game['result'] == '+ - -' or game['white_name'] == 'bye' or game['black_name'] == 'bye'
+def is_technical(game, pgn_moves):
+    if game['white_name'] == 'bye' or game['black_name'] == 'bye': return True
+    if (game['result'] == '--+' or game['result'] == '+--') and (not pgn_moves):
+        return True
+    return False
 
 def safe_int(value):
     try: return int(str(value).strip())
@@ -292,7 +301,7 @@ def find_main_table(soup, keywords):
         h2_text = h2.get_text(strip=True).lower()
         for keyword in keywords:
             if keyword in h2_text:
-                element = h2.find_next_sibling()
+                element = h2.find_next("table")
                 if element and element.name == 'table': return element
     return None
 
@@ -314,19 +323,6 @@ async def fetch_with_retries(session, url, retries=3, delay=2):
                 logging.error(f"Все {retries} попыток для {url} провалились. Ошибка: {e}")
                 return None
     return None
-# async def fetch_async(session, url):
-#     if not url: return None
-#     headers = {'User-Agent': 'Mozilla/5.0'}
-#     try:
-#         async with session.get(url, headers=headers, timeout=20) as response:
-#             response.raise_for_status()
-#             return await response.text(encoding='utf-8', errors='ignore')
-#     except asyncio.TimeoutError:
-#         logging.warning(f"Таймаут при загрузке {url}")
-#         return None
-#     except Exception as e:
-#         logging.warning(f"Ошибка при загрузке {url}: {e}")
-#         return None
 
 def parse_cr_details_table(table_soup):
     """Универсальный парсер для таблиц ключ-значение на chess-results."""
@@ -343,45 +339,6 @@ def parse_cr_details_table(table_soup):
 def parse_tournament_details(soup):
     table = soup.find('td', class_='CR0').find('table')
     return parse_cr_details_table(table)  
-# def parse_tournament_details(soup):
-#     details = {}
-#     table = soup.find('td', class_='CR0').find('table')
-#     if table:
-#         for row in table.find_all('tr'):
-#             cells = row.find_all('td', class_='CR')
-#             if len(cells) == 2:
-#                 key = cells[0].get_text(strip=True).lower()
-#                 value = cells[1].get_text(strip=True)
-#                 details[key] = value
-#     return {
-#         'organizer': details.get('организатор(ы)'),
-#         'federation': details.get('федерация'),
-#         'arbiter': details.get('главный арбитр'),
-#         'time_control': details.get('контроль времени (standard)'),
-#         'city': details.get('город'),
-#         'rounds_count': re.search(r'\d+', details.get('number of rounds', ''))
-#     }
-
-# def parse_participants(soup, base_url, tnr_id):
-#     participants = []
-#     table = soup.find('table', class_='CRs1')
-#     if not table: return []
-#     for row in table.find_all('tr', class_=['CRg1', 'CRg2']):
-#         cells = row.find_all('td')
-#         if len(cells) < 6: continue
-        
-#         name_cell = cells[2]
-#         player_link = name_cell.find('a')
-#         player_url = urljoin(base_url, player_link['href']) if player_link else None
-
-#         participants.append({
-#             'start_no': cells[0].get_text(strip=True),
-#             'name': name_cell.get_text(strip=True),
-#             'fide_id': cells[3].get_text(strip=True) or None,
-#             'rating': cells[5].get_text(strip=True) or None,
-#             'url': player_url
-#         })
-#     return participants
 
 def parse_participants(soup, base_url, tnr_id):
     """Конструирует URL игроков вручную для надежности."""
@@ -404,33 +361,214 @@ def parse_participants(soup, base_url, tnr_id):
         })
     return participants
 
-# async def parse_player_details(session, player_data):
-#     html = await fetch_async(session, player_data['url'])
-#     if not html: return player_data # Возвращаем исходные данные
-#     soup = BeautifulSoup(html, 'lxml')
-#     table = soup.find('table', class_='CRs1')
-#     if not table: return player_data
-    
-#     details = {}
-#     for row in table.find_all('tr'):
-#         cells = row.find_all('td')
-#         if len(cells) == 2:
-#             key = cells[0].get_text(strip=True).lower().replace(' ', '_').replace('.', '')
-#             details[cells[0].get_text(strip=True)] = cells[1].get_text(strip=True)
-    
-#     player_data.update({
-#         'national_id': details.get('Идент.Номер'),
-#         'birth_year': details.get('Год рождения'),
-#         'federation': details.get('Федерация'),
-#         'score': details.get('Очки'),
-#         'final_rank': details.get('Место'),
-#         'performance_rating': details.get('Рейтинговый перфоманс')
-#     })
-#     return player_data
-
 def create_header_map(header_row):
     """Создает карту 'название заголовка' -> 'индекс колонки'."""
-    return {th.get_text(strip=True).lower(): i for i, th in enumerate(header_row.find_all('th'))}
+    return {th.get_text(strip=True).lower(): i for i, th in enumerate(header_row.select('th, td'))}
+
+def parse_all_rounds_page(html_content):
+    """
+    Парсит единую страницу со всеми турами.
+    """
+    all_games = []
+    if not html_content: return all_games
+    
+    soup = BeautifulSoup(html_content, 'lxml')
+
+    # --- Стратегия 1: Поиск нескольких таблиц, разделенных h3 ---
+    round_headers = soup.find_all('h3', string=re.compile(r'\d+\.\s*Тур'))
+    if round_headers:
+        # Находим все заголовки h3, которые обычно обозначают начало тура
+        for h3 in soup.find_all('h3'):
+            h3_text = h3.get_text(strip=True)
+            # Извлекаем номер тура из заголовка
+            round_match = re.search(r'(\d+)\.\s+Тур', h3_text, re.IGNORECASE)
+            if not round_match: continue
+            
+            round_number = round_match.group(1)
+            table = h3.find_next_sibling('table', class_='CRs1')
+            if not table: continue
+            
+            header_row = table.find('tr', class_='CRg1b')
+            if not header_row: continue
+        
+            header_map = create_header_map(header_row)
+            KEY_BOARD = next((k for k in header_map if k in ['bo.', 'до.']), None)
+            KEY_WHITE = next((k for k in header_map if k == 'white'), None)
+            KEY_BLACK = next((k for k in header_map if k == 'black'), None)
+            KEY_RESULT = next((k for k in header_map if k == 'результат'), None)
+
+            if not all([KEY_BOARD, KEY_WHITE, KEY_BLACK, KEY_RESULT]): 
+                logging.warning(f"Не удалось найти все необходимые заголовки в таблице тура {round_number}")
+                continue
+
+            for row in table.find_all('tr', class_=['CRg1', 'CRg2']):
+                cells = row.find_all('td')
+                if len(cells) <= max(header_map.values()): continue
+
+                white_player_name = cells[header_map[KEY_WHITE]].get_text(strip=True)
+                black_player_name = cells[header_map[KEY_BLACK]].get_text(strip=True)
+                result = cells[header_map[KEY_RESULT]].get_text(strip=True) 
+
+                if result: result = result.replace(" ", "")
+
+                if white_player_name == 'без пары' or black_player_name == 'без пары': continue
+
+                if white_player_name and black_player_name:
+                    all_games.append({
+                        'round': round_number,
+                        'board': cells[header_map[KEY_BOARD]].get_text(strip=True),
+                        'white_name': white_player_name,
+                        'black_name': black_player_name,
+                        'result': result,
+                    })
+        return all_games
+
+    # --- Стратегия 2: Поиск одной большой таблицы ---
+    main_table = soup.find('table', class_='CRs1')
+    if main_table:
+        # logging.info("Обнаружен формат страницы с одной большой таблицей.")
+        current_round = None
+        for row in main_table.find_all('tr'):
+            # Проверка на строку-заголовок тура
+            header_cell = row.find('td', class_='none', colspan=True)
+            if header_cell and 'Тур' in header_cell.text:
+                round_match = re.search(r'(\d+)\.', header_cell.text)
+                if round_match:
+                    current_round = round_match.group(1)
+                continue
+            
+            # Проверка на строку с партией
+            if row.get('class') in (['CRg1'], ['CRg2']) and current_round:
+                cells = row.find_all('td')
+                if len(cells) < 10: continue
+                # Индексы для этой разметки отличаются
+                result = cells[5].get_text(strip=True)
+                if result: result = result.replace(" ", "")
+
+                all_games.append({
+                    'round': current_round,
+                    'board': cells[0].get_text(strip=True),
+                    'white_name': cells[4].get_text(strip=True),
+                    'black_name': cells[7].get_text(strip=True),
+                    'result': result,
+                })
+        return all_games
+
+# Сейчас не используется, переделал на страницу где все раунды одновременно есть.
+def parse_round_page(html_content, round_number):
+    """
+    Парсит страницу одного тура и извлекает все партии.
+    """
+    games = []
+    if not html_content: return games
+    
+    soup = BeautifulSoup(html_content, 'lxml')
+    # print(soup)
+    table = find_main_table(soup, ['пары/результаты', 'pairings/results'])
+    
+    if not table: return games
+
+    header_row = table.find('tr', class_='CRg1b')
+    if not header_row: return games
+    
+    header_map = create_header_map(header_row)
+    # Ищем ключи гибко, так как названия могут отличаться
+    KEY_BOARD = next((k for k in header_map if k in ['bo.', 'до.']), None)
+    KEY_WHITE = next((k for k in header_map if k == 'white'), None)
+    KEY_BLACK = next((k for k in header_map if k == 'black'), None)
+    KEY_RESULT = next((k for k in header_map if k == 'результат'), None)
+
+    if not all([KEY_BOARD, KEY_WHITE, KEY_BLACK, KEY_RESULT]): 
+        logging.warning(f"Не удалось найти все необходимые заголовки в таблице тура {round_number}")
+        return games
+
+    for row in table.find_all('tr', class_=['CRg1', 'CRg2']):
+        cells = row.find_all('td')
+
+        white_player_name = cells[header_map[KEY_WHITE]].get_text(strip=True)
+        black_player_name = cells[header_map[KEY_BLACK]].get_text(strip=True)
+
+        # Пропускаем строки, где не может быть двух игроков (например, bye)
+        if white_player_name == 'без пары' or black_player_name == 'без пары': continue
+
+        if white_player_name and black_player_name:
+            games.append({
+                'round': str(round_number),
+                'board': cells[header_map[KEY_BOARD]].get_text(strip=True),
+                'result': cells[header_map[KEY_RESULT]].get_text(strip=True),
+                'white_name': white_player_name,
+                'black_name': black_player_name,
+            })
+    return games
+
+async def scrape_all_games_from_single_page(session, tnr_id, semaphore):
+    """
+    Загружает и парсит одну страницу со всеми партиями турнира.
+    """
+    # Формируем URL, который выведет все туры и до 99999 строк на страницу
+    url = f"https://chess-results.com/tnr{tnr_id}.aspx?lan=11&art=2&zeilen=99999"
+    
+    async with semaphore:
+        html = await fetch_with_retries(session, url)
+        
+    if not html:
+        logging.warning(f"Не удалось загрузить страницу со всеми партиями для tnr{tnr_id}")
+        return []
+        
+    return parse_all_rounds_page(html)
+
+async def parse_schedule(session, tnr_id):
+    """
+    Парсит страницу расписания.
+    Возвращает кортеж: (карта { 'раунд': 'дата' }, общее количество туров).
+    """
+    schedule_url = f"https://chess-results.com/tnr{tnr_id}.aspx?lan=11&art=14"
+    html = await fetch_with_retries(session, schedule_url)
+    if not html:
+        return {}, 0
+    
+    soup = BeautifulSoup(html, 'lxml')
+    schedule_table = find_main_table(soup, ['расписание', 'schedule'])
+    if not schedule_table:
+        return {}, 0
+
+    schedule_map = {}
+    rows = schedule_table.find_all('tr')[1:] # Пропускаем заголовок
+    for row in rows:
+        cells = row.find_all('td')
+        if len(cells) >= 2:
+            round_num = cells[0].get_text(strip=True)
+            date_str = cells[1].get_text(strip=True).replace('/', '-')
+            schedule_map[round_num] = date_str
+    
+    rounds_count = len(rows) # Количество строк в таблице = количество туров
+    #logging.info(f"Загружено расписание для {rounds_count} туров.")
+    return schedule_map, rounds_count
+
+# сейчас не используется, переделал на страницу где парсятся все раунды одновременно
+async def scrape_all_rounds_data(session, tnr_id, rounds_count, semaphore):
+    """
+    Асинхронно собирает данные со страниц всех туров.
+    """
+    if not rounds_count or rounds_count <= 0: return {}
+
+    tasks = []
+    for round_num in range(1, rounds_count + 1):
+        url = f"https://s2.chess-results.com/tnr{tnr_id}.aspx?lan=11&art=2&rd={round_num}"
+        # Оборачиваем fetch и parse в одну корутину для каждой задачи
+        async def fetch_and_parse(session, url, round_num, semaphore):
+            async with semaphore:
+                html = await fetch_with_retries(session, url)
+            return parse_round_page(html, round_num)
+        
+        tasks.append(fetch_and_parse(session, url, round_num, semaphore))
+
+    all_games = []
+    all_rounds_games = await asyncio.gather(*tasks)
+    for round_games in all_rounds_games:
+        all_games.extend(round_games)
+
+    return all_games
 
 async def parse_player_details(session, player_data, semaphore):
     """Использует семафор для ограничения параллельных запросов."""
@@ -459,37 +597,6 @@ async def parse_player_details(session, player_data, semaphore):
         'club_city': details.get('Клуб/Город')
     })
 
-    games = []
-    games_table = info_table.find_next('table', class_='CRs1')
-    if games_table:
-        header_row = games_table.find('tr', class_='CRg1b')
-        if header_row:
-            header_map = create_header_map(header_row)
-            KEY_ROUND = next((k for k in header_map if k in ['тур', 'rd.']), None)
-            KEY_BOARD = next((k for k in header_map if k in ['bo.', 'brd.']), None)
-            KEY_OPPONENT = next((k for k in header_map if k in ['имя', 'name']), None)
-
-        for row in games_table.find_all('tr', class_=['CRg1', 'CRg2']):
-            cells = row.find_all('td')
-            if len(cells) < 10: continue
-
-            rn = None
-            board = None
-            opponent_name = None
-            if KEY_ROUND: rn = cells[header_map[KEY_ROUND]].get_text(strip=True),
-            if KEY_BOARD: board = cells[header_map[KEY_BOARD]].get_text(strip=True),
-            if KEY_OPPONENT: opponent_name = cells[header_map[KEY_OPPONENT]].get_text(strip=True),
-
-            # print("parsing:")
-            # print()
-            # print(rn)
-            # print(board)
-            games.append({
-                'round': cells[header_map[KEY_ROUND]].get_text(strip=True) if KEY_ROUND else "?",
-                'board': cells[header_map[KEY_BOARD]].get_text(strip=True) if KEY_BOARD else "?",
-                'opponent_name': cells[header_map[KEY_OPPONENT]].get_text(strip=True) if KEY_OPPONENT else "",
-            })
-    player_data['games'] = games
     return player_data
 
 # ОСНОВНОЙ ПРОЦЕСС КОНВЕРТАЦИИ ---
@@ -510,41 +617,34 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
         main_soup = BeautifulSoup(main_html, 'lxml')
         details = parse_tournament_details(main_soup)
 
+        # Параллельно грузим расписание
+        schedule_task = asyncio.create_task(parse_schedule(session, tnr_id))
+
         participants = parse_participants(main_soup, main_url, tnr_id)
 
         if not participants:
             return f"Предупреждение: не найден список участников для tnr{tnr_id}"
+
+        schedule_map, rounds_count = await schedule_task # Дожидаемся загрузки расписания
+
+        # одним запросом получаем все партии с сайта как основной источник истины
+        scraped_games = await scrape_all_games_from_single_page(session, tnr_id, semaphore)
+        if not scraped_games:
+             logging.warning(f"Не удалось собрать данные о партиях со страницы 'все туры' для tnr{tnr_id}")
 
         participant_tasks = [parse_player_details(session, p, semaphore) for p in participants]
         full_participants_data = await asyncio.gather(*participant_tasks)
 
         failed_details_count = sum(1 for p in full_participants_data if p.get('fetch_failed'))
 
-        game_dates = []
-        for game in pgn_games:
-            date_str = game.get('date', '????.??.??').replace('.', '-')
-            # Пытаемся преобразовать в объект datetime для корректной сортировки
-            try:
-                # Формат YYYY-MM-DD
-                game_dates.append(datetime.strptime(date_str, '%Y-%m-%d'))
-            except ValueError:
-                continue # Игнорируем некорректные даты
-
-        start_date = min(game_dates).strftime('%Y-%m-%d') if game_dates else None
-        end_date = max(game_dates).strftime('%Y-%m-%d') if game_dates else start_date
+        all_dates = [v for v in schedule_map.values() if v]
+        start_date = min(all_dates) if all_dates else None
+        end_date = max(all_dates) if all_dates else start_date
 
         site = details.get('Место проведения')
-        # 2. Запасной вариант - данные из PGN (берем из первой партии)
+        # Запасной вариант - данные из PGN (берем из первой партии)
         if not site and pgn_games:
             site = pgn_games[0].get('site')
-
-        all_rounds = [
-            safe_int(game.get('round'))
-            for p_data in full_participants_data
-            for game in p_data.get('games', [])
-            if safe_int(game.get('round')) is not None
-        ]
-        rounds_count = max(all_rounds) if all_rounds else 0
 
         cursor.execute("""
             INSERT OR IGNORE INTO tournaments (name, tnr_id, site, city, organizer, arbiter, time_control, federation, start_date, end_date, rounds_count) 
@@ -558,12 +658,10 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
         cursor.execute("SELECT id FROM tournaments WHERE tnr_id = ?", (tnr_id,))
         tournament_id = cursor.fetchone()[0]
 
+        # Записываем данные об игроках и их выступлениях, создаем карту для сопоставления
         perf_map_by_key = {}
         for p_data in full_participants_data:
             player_id = find_or_create_player(conn, p_data['name'], p_data.get('fide_id'), p_data.get('national_id'), p_data.get('birth_year'), p_data.get('federation'))
-            # print(p_data['name'])
-            # print(player_id)
-            # print("===========================\n\n\n\n====================")
             cursor.execute("""
                 INSERT OR IGNORE INTO player_performances 
                 (player_id, tournament_id, starting_rank, rating_at_tournament, score, final_rank, performance_rating, club_city, rating_change)
@@ -579,61 +677,57 @@ async def process_tournament(session, pgn_tournament_name, pgn_games, excel_map,
             perf_id = cursor.fetchone()[0]
             
             match_key = normalize_player_name_key(p_data['name'])
-            # print(match_key)
-            # print("---")
             perf_map_by_key[match_key] = perf_id
 
-        # print(perf_map_by_key)
+        # Создаем карту для быстрого поиска PGN по паре игроков
+        pgn_map = {tuple(sorted((normalize_player_name_key(g['white']), normalize_player_name_key(g['black'])))): g for g in pgn_games}
 
-        scraped_games_map = {}
-        for p_data in full_participants_data:
-            player_key = normalize_player_name_key(p_data['name'])
-            for game in p_data.get('games', []):
-                opponent_key = normalize_player_name_key(game['opponent_name'])
-                # print(player_key)
-                # print(game['opponent_name'])
-                # Ключ - пара игроков. Значение - объект с раундом и доской.
-                game_key = tuple(sorted((player_key, opponent_key)))
-                scraped_games_map[game_key] = {'round': game['round'], 'board': game['board']}
+        
+        # Сохраняем партии, используя chess-results как основу и обогащая их данными из PGN
+        for game_from_site in scraped_games:
+            white_key = normalize_player_name_key(game_from_site['white_name'])
+            black_key = normalize_player_name_key(game_from_site['black_name'])
 
-        # print(scraped_games_map)
-        # print("\n=====================\n")
-        # 2. Обогащаем и сохраняем партии
-        for game_from_pgn in pgn_games:
-            white_key = normalize_player_name_key(game_from_pgn['white'])
-            black_key = normalize_player_name_key(game_from_pgn['black'])
-            
-            white_perf_id = perf_map_by_key.get(white_key)
-            black_perf_id = perf_map_by_key.get(black_key)
+            if game_from_site['black_name'] == 'bye':
+                white_perf_id = perf_map_by_key.get(white_key)
+                black_perf_id = None
+            else:
+                white_perf_id = perf_map_by_key.get(white_key)
+                black_perf_id = perf_map_by_key.get(black_key)
 
-            # print(white_key)
-            # print(white_perf_id)
-            # print(black_key)
-            # print(black_perf_id)
-            
-            if white_perf_id and black_perf_id:
-                game_key = tuple(sorted((white_key, black_key)))
-                
-                # Ищем обогащенные данные по паре игроков
-                scraped_data = scraped_games_map.get(game_key)
-                # print("SCRAP ")
-                # print(scraped_data)
-                
-                # Используем данные с chess-results как приоритетные
-                final_round = scraped_data.get('round', '?') if scraped_data else game_from_pgn.get('round', '?')
-                final_board = scraped_data.get('board', '?') if scraped_data else '?'
-                # print(final_round + " " + final_board)
-                # print("\n")
-                
-                pgn_date = game_from_pgn.get('date', '????.??.??').replace('.', '-')
+                if not (white_perf_id and black_perf_id):
+                    logging.warning(f"Не найдены ID для игроков в партии {white_key} vs {black_key} в tnr{tnr_id}. Партия пропущена.")
+                    continue
 
-                cursor.execute("""
-                    INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, eco_code, pgn_moves, game_date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    tournament_id, white_perf_id, black_perf_id, final_round, final_board,
-                    game_from_pgn['result'], game_from_pgn.get('eco'), game_from_pgn.get('moves'), pgn_date
-                ))
+            # Ищем PGN для этой пары
+            game_key = tuple(sorted((white_key, black_key)))
+            pgn_data = pgn_map.get(game_key, {}) # Используем пустой словарь, если PGN не найден
+
+            date = pgn_data.get('date', '????.??.??')
+            if date == '????.??.??':
+                date = schedule_map[game_from_site['round']]
+            else:
+                date = date.replace('.', '-')
+
+            result = pgn_data.get('result', '?')
+            if result == '' or result == '?':
+                # logging.warning(f"Не найдена pgn запись для игроков в партии {white_key} vs {black_key} в tnr{tnr_id}")
+                result = game_from_site['result']
+
+            is_tech = is_technical(game_from_site, pgn_data.get('moves'))
+
+            cursor.execute("""
+                INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, eco_code, pgn_moves, game_date, is_technical)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                tournament_id, white_perf_id, black_perf_id,
+                game_from_site['round'], game_from_site['board'],
+                result,
+                pgn_data.get('eco'),
+                pgn_data.get('moves'),
+                date,
+                is_tech
+            ))
         conn.commit()
         if failed_details_count > 0:
             return f"Успешно (но с {failed_details_count} ошибками загрузки карточек): {pgn_tournament_name} (tnr{tnr_id})"
@@ -659,10 +753,16 @@ async def main():
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
         
         tasks = []
+        count = 0
         async with aiohttp.ClientSession() as session:
             for name, games in pgn_tournaments.items():
                 # Передаем семафор в каждую задачу
+                # normalized_name = normalize_tournament_name(name)
+                # tnr_id = excel_map.get(normalized_name)
+                # if not tnr_id == 681714: continue
                 tasks.append(process_tournament(session, name, games, excel_map, conn, semaphore))
+                # count+=1
+                # if count > 14: break
             
             for f in tqdm_asyncio.as_completed(tasks, desc="Обработка турниров"):
                 result = await f
