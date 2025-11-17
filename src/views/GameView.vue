@@ -14,7 +14,6 @@
       <!-- ================ ДЕСКТОПНЫЙ МАКЕТ ==================== -->
       <!-- ====================================================== -->
       <div v-if="display.mdAndUp.value" class="desktop-layout-container">
-        
         <!-- Левая колонка с доской -->
         <div class="board-column">
           <v-sheet class="d-flex flex-column" border rounded="lg">
@@ -23,7 +22,10 @@
               :captured-pieces="netCapturedPieces[topPlayer.color]" 
               :advantage="currentGameState.advantage[topPlayer.color]"
             />
-            <div class="px-2 flex-grow-1">
+            <!-- <div class="px-2 flex-grow-1"> -->
+            <div class="board-wrapper">
+              <!-- <EvaluationBar :score="currentEvaluation" /> -->
+              <EvaluationBar v-if="isAnalysisEnabled" class="eval-bar-wrapper" :score="currentEvaluation" :orientation="boardConfig.orientation"  />
               <TheChessboard :board-config="boardConfig" reactive-config @board-created="onBoardCreated" />
             </div>
             <PlayerInfoPanel 
@@ -63,6 +65,13 @@
               </div>
             </div>
             <v-divider></v-divider>
+<!--             <StockfishAnalysis 
+                v-if="isAnalysisEnabled"
+                :result="analysisResult"
+                v-model:multiPv="multiPv"
+                :turn="currentTurn"  
+                class="flex-shrink-0"
+            /> -->
 
             <!-- Футер -->
             <div class="pa-2">
@@ -76,11 +85,58 @@
                 <v-btn @click="toEnd" icon="mdi-skip-next" title="В конец"></v-btn>
               </v-btn-group>
               <v-spacer></v-spacer>
+<!--               <v-tooltip location="top">
+                <template #activator="{ props }">
+                  <v-btn v-bind="props" @click="toggleAnalysis" :loading="isAnalyzing || (isAnalysisEnabled && !isEngineLoaded)" :color="isAnalysisEnabled ? 'primary' : ''" variant="text" icon="mdi-calculator-variant"></v-btn>
+                </template>
+                <span>{{ isAnalysisEnabled ? 'Выключить анализ' : 'Включить анализ' }}</span>
+              </v-tooltip> -->
+
               <v-btn @click="flipBoard" variant="text" icon="mdi-rotate-3d-variant" title="Перевернуть доску"></v-btn>
               <v-btn :href="lichessUrl" target="_blank" prepend-icon="mdi-open-in-new" variant="text">
                 Анализ
               </v-btn>
             </v-card-actions>
+          </v-card>
+          <v-card class="fill-height">
+            <v-card-title class="d-flex align-center py-1">
+              <span class="text-subtitle-1">
+                <v-icon start>mdi-calculator-variant</v-icon>
+                Анализ
+              </span>
+              <v-spacer />
+              
+              <!-- Контейнер для переключателя и индикатора загрузки -->
+              <div class="d-flex align-center ga-2">
+                <v-switch
+                  v-model="isAnalysisEnabled"
+                  color="primary"
+                  density="compact"
+                  hide-details
+                ></v-switch>
+                
+                <v-progress-circular
+                  v-if="isAnalyzing || (isAnalysisEnabled && !isEngineLoaded)"
+                  indeterminate
+                  size="20"
+                  width="2"
+                  color="grey"
+                ></v-progress-circular>
+              </div>
+            </v-card-title>
+            <v-divider />
+            <StockfishAnalysis 
+              v-if="isAnalysisEnabled"
+              :result="analysisResult"
+              v-model:multiPv="multiPv"
+              :turn="currentTurn"
+              :current-fen="getCurrentFen()"
+              @show-move-on-board="handleShowMove"
+              @hide-move-on-board="handleHideMove"
+            />
+             <div v-else class="d-flex align-center justify-center fill-height text-medium-emphasis">
+              Анализ выключен
+            </div>
           </v-card>
         </div>
       </div>
@@ -155,6 +211,10 @@ import { formatResult, formatSanWithFigurine } from '@/utils/formatters';
 import { historyToPgnString } from '@/utils/pgn';
 import { useDisplay } from 'vuetify';
 import PlayerInfoPanel from '@/components/PlayerInfoPanel.vue';
+import EvaluationBar from '@/components/EvaluationBar.vue'; // <-- ИМПОРТ КОМПОНЕНТА
+// import loadEngine from '@/services/loadEngine.js'; // Убедитесь, что путь правильный
+import { useStockfish } from '@/utils/useStockfish';
+import StockfishAnalysis from '@/components/StockfishAnalysis.vue';
 
 const props = defineProps({
   gameId: { type: [String, Number], required: true }
@@ -173,7 +233,8 @@ const gameStates = ref([]); // Массив состояний для каждо
 
 const boardConfig = reactive({
   orientation: 'white',
-  viewOnly: true,
+  // viewOnly: true,
+  // drawable: true,
   highlight: { lastMove: true, check: true },
   animation: { enabled: true, duration: 200 },
   responsive: true 
@@ -204,8 +265,17 @@ const loadGameIntoBoard = (gameData) => {
     const tempGame = new Chess();
     tempGame.loadPgn(gameData.pgn_moves);
     moves.value = tempGame.history({ verbose: true });
+    // evaluationsByPly.value = [];
+    isAnalyzing.value = false;
     analyzeGameHistory(gameData.pgn_moves);
     toStart();
+    // boardAPI.drawMove('d2', 'd4', 'paleBlue')
+    // boardAPI.setShapes([{
+    //   orig: 'd2',
+    //   dest: 'd4',
+    //   brushColor: 'g'
+    // }]);
+    // orig: Square, dest: Square, brushColor: BrushColor
   } catch (e) {
     console.error("Invalid PGN:", e);
     moves.value = [];
@@ -214,6 +284,42 @@ const loadGameIntoBoard = (gameData) => {
 };
 
 const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+
+/**
+ * Генерирует FEN для текущего полухода (currentPly).
+ * Это правильный и надежный способ, работающий независимо от vue3-chessboard.
+ */
+const getCurrentFen = () => {
+  try {
+    // 1. Создаем НОВЫЙ, чистый экземпляр chess.js.
+    // Он всегда начинается со стартовой позиции. Это ключевой момент.
+    const tempChess = new Chess();
+
+    // 2. Воспроизводим ходы из нашего массива `moves` один за другим,
+    // ровно до текущего полухода `currentPly`.
+    for (let i = 0; i < currentPly.value; i++) {
+      // Мы используем .san из нашего массива ходов, который был получен при загрузке PGN.
+      tempChess.move(moves.value[i].san);
+    }
+
+    // 3. Теперь `tempChess` находится именно в той позиции, которая нам нужна.
+    // Возвращаем ее FEN.
+    return tempChess.fen();
+
+  } catch (e) {
+    // Эта защита сработает, если что-то пойдет не так (например, ошибка в PGN)
+    console.error(`Could not generate FEN for ply ${currentPly.value}:`, e);
+    return null;
+  }
+};
+
+// analyzeCurrentPosition теперь использует новый метод
+function analyzeCurrentPosition() {
+  if (!isAnalysisEnabled.value || !isEngineLoaded.value) return;
+  
+  const movesString = getMovesUciString();
+  startAnalysis(movesString, multiPv.value);
+}
 
 function analyzeGameHistory(pgn) {
   const chess = new Chess();
@@ -309,7 +415,6 @@ const netCapturedPieces = computed(() => {
 });
 
 const currentGameState = computed(() => {
-  console.log(gameStates.value[currentPly.value])
   return gameStates.value[currentPly.value] || {
     captured: { w: [], b: [] },
     advantage: { w: 0, b: 0 },
@@ -394,15 +499,226 @@ const scrollToMove = () => {
       const scrollTop = Math.max(0, centeredScrollTop);
       container.scrollTo({ top: scrollTop, behavior: 'smooth' });
     }
+    // boardAPI.drawMove('d2', 'd4', 'paleBlue')
   });
 };
+
+const isAnalysisEnabled = ref(false);
+const multiPv = ref(3); // Управляем количеством линий
+// const evaluationsByPly = ref([]);
+
+const {
+  isEngineLoaded,
+  isAnalyzing,
+  analysisResult,
+  initEngine,
+  startAnalysis,
+  stopAnalysis,
+  setMultiPV
+} = useStockfish();
+
+// const currentEvaluation = computed(() => {
+//   return evaluationsByPly.value[currentPly.value] ?? 0;
+// });
+
+// async function analyzeCurrentPosition() {
+//   console.log("ANALYZE")
+//   if (isAnalyzing.value || !isAnalysisEnabled.value) return;
+//   if (evaluationsByPly.value[currentPly.value] !== undefined) return;
+
+//   isAnalyzing.value = true;
+  
+//   const tempChess = new Chess();
+//   try {
+//     for (let i = 0; i < currentPly.value; i++) {
+//       tempChess.move(moves.value[i].san);
+//     }
+//     const fen = tempChess.fen();
+    
+//     // Оборачиваем вызов в try...catch на случай, если Promise будет отклонен
+//     sendCommand("position fen " + fen)
+//     sendCommand("go depth 20")
+
+//     // const evaluation = await stockfishService.getEvaluation(fen);
+
+//     // const newEvals = [...evaluationsByPly.value];
+//     // newEvals[currentPly.value] = evaluation;
+//     // evaluationsByPly.value = newEvals;
+
+//   } catch (error) {
+//     console.error("Ошибка при запросе оценки:", error);
+//   } finally {
+//     isAnalyzing.value = false;
+//   }
+// }
+
+// Следим за загрузкой движка, чтобы запустить анализ после инициализации
+watch(isEngineLoaded, (loaded) => {
+  if (loaded && isAnalysisEnabled.value) {
+    analyzeCurrentPosition();
+  }
+});
+
+// Следим за сменой хода и перезапускаем анализ
+watch(currentPly, () => {
+  boardAPI?.hideMoves();
+  if (isAnalysisEnabled.value) {
+    analyzeCurrentPosition();
+  }
+});
+
+// Следим за изменением MultiPV и перезапускаем анализ, если он активен
+watch(multiPv, (newCount) => {
+    setMultiPV(newCount);
+    if(isAnalysisEnabled.value && isEngineLoaded.value) {
+        analyzeCurrentPosition();
+    }
+});
+
+/**
+ * Преобразует историю ходов до currentPly в UCI-строку.
+ */
+const getMovesUciString = () => {
+  // chess.js использует 'lan' для UCI-подобной нотации, это то, что нам нужно.
+  return moves.value
+    .slice(0, currentPly.value)
+    .map(move => move.from + move.to + (move.promotion || ''))
+    .join(' ');
+};
+
+// --- ИНИЦИАЛИЗАЦИЯ ДВИЖКА С CALLBACK'ОМ ---
+// Вызываем это в toggleAnalysis или onMounted
+function initializeEngine() {
+  if (isEngineLoaded.value) return;
+
+  // Передаем функцию, которая будет вызвана с лучшим ходом
+  initEngine((bestMoveUci) => {
+    // Используем nextTick для максимальной безопасности
+    nextTick(() => {
+      if (!boardAPI) return;
+      
+      const from = bestMoveUci.substring(0, 2);
+      const to = bestMoveUci.substring(2, 4);
+      console.log(from)
+      console.log(to)
+
+      // boardAPI?.drawMove(from, to, 'g');
+      boardAPI.drawMove(from, to, 'paleBlue')
+      // boardAPI.setShapes([{
+      //   orig: from,
+      //   dest: to,
+      //   brush: 'g' // Зеленая стрелка
+      // }]);
+    });
+  });
+}
+
+function toggleAnalysis() {
+  isAnalysisEnabled.value = !isAnalysisEnabled.value;
+  if (isAnalysisEnabled.value) {
+    if (!isEngineLoaded.value) {
+      // initializeEngine()
+      initEngine();
+    } else {
+      analyzeCurrentPosition();
+    }
+  } else {
+    stopAnalysis();
+    boardAPI.hideMoves()
+  }
+}
+watch(isAnalysisEnabled, (isNowEnabled) => {
+  if (isNowEnabled) {
+    // Логика ВКЛЮЧЕНИЯ анализа
+    if (!isEngineLoaded.value) {
+      initEngine();
+    } else {
+      analyzeCurrentPosition();
+    }
+  } else {
+    stopAnalysis();
+    boardAPI.hideMoves()
+  }
+});
+
+// === ВИЗУАЛИЗАЦИЯ НА ДОСКЕ ===
+// Следим за результатами анализа, чтобы нарисовать стрелку
+watch(
+  () => analysisResult.value.lines[0]?.pv,
+  (bestLine) => {
+    if (isAnalysisEnabled.value && bestLine && bestLine.length > 0) {
+      const bestMoveUci = bestLine[0];
+      const from = bestMoveUci.substring(0, 2);
+      const to = bestMoveUci.substring(2, 4);
+      
+      // Используем API vue3-chessboard для рисования
+      boardAPI?.hideMoves();
+      boardAPI.drawMove(from, to, 'paleBlue')
+      // boardAPI?.drawArrow(from, to, 'd'); // 'd' - цвет по умолчанию (зеленый)
+    }
+  },
+  { deep: true }
+);
+// // === ВИЗУАЛИЗАЦИЯ НА ДОСКЕ ===
+// // Следим за результатами анализа, чтобы нарисовать стрелку
+// watch(
+//   () => analysisResult.value.lines[0]?.pv,
+//   (bestLine) => {
+//     // 2. Оборачиваем всю логику в nextTick
+//     nextTick(() => {
+//       // Защита: убедимся, что boardAPI все еще существует на момент выполнения
+//       if (!boardAPI) return; 
+
+//       if (isAnalysisEnabled.value && bestLine && bestLine.length > 0) {
+//         const bestMoveUci = bestLine[0];
+
+//         // Дополнительная защита: убедимся, что ход имеет корректный формат
+//         if (typeof bestMoveUci === 'string' && bestMoveUci.length >= 4) {
+//           const from = bestMoveUci.substring(0, 2);
+//           const to = bestMoveUci.substring(2, 4);
+
+//           // // Рисуем зеленую стрелку для лучшего хода
+//           // boardAPI.setShapes([{
+//           //   orig: from,
+//           //   dest: to,
+//           //   brush: 'g'
+//           // }]);
+//         }
+//       } else if (isAnalysisEnabled.value) {
+//         // Если анализ включен, но линий нет, очищаем доску
+//         boardAPI.setShapes([]);
+//       }
+//     });
+//   },
+//   { deep: true }
+// );
+
+// Передаем оценку в EvaluationBar с учетом хода
+const currentEvaluation = computed(() => {
+  if (!isAnalysisEnabled.value) return 0;
+  // const turn = moves.value[currentPly.value]?.color === 'b' ? 'b' : 'w';
+  // console.log(turn)
+  const score = analysisResult.value.score;
+  // Stockfish дает оценку с точки зрения текущего игрока.
+  // Нам нужно нормализовать ее: положительная = преимущество белых.
+  return currentTurn.value === 'w' ? score : -score;
+});
+
+const currentTurn = computed(() => {
+  // Ply (полуход) 0 - ход белых. Ply 1 - ход черных. Ply 2 - ход белых, и т.д.
+  // Четные полуходы (0, 2, 4...) - ход белых ('w').
+  // Нечетные (1, 3, 5...) - ход черных ('b').
+  return currentPly.value % 2 === 0 ? 'w' : 'b';
+});
 
 const handleKeyDown = (event) => {
   if (event.key === 'ArrowRight') { event.preventDefault(); next(); }
   else if (event.key === 'ArrowLeft') { event.preventDefault(); back(); }
 };
 onMounted(() => window.addEventListener('keydown', handleKeyDown));
-onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
+});
 </script>
 
 <style scoped>
@@ -499,5 +815,20 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeyDown));
 .board-column :deep(.main-wrap) {
   width: 100% !important;
   height: auto !important; 
+}
+
+.board-wrapper {
+  position: relative;
+  padding: 0 8px; /* Добавляем отступы по бокам */
+}
+.eval-bar-wrapper {
+  border: 2px solid;
+  border-color: #e0e0e0;
+  position: absolute;
+  left: -30px; /* Позиционируем внутри отступа */
+  top: 0;
+  bottom: 0;
+  width: 25px; /* Делаем шкалу чуть тоньше */
+  z-index: 1; /* На всякий случай, чтобы была поверх доски */
 }
 </style>
