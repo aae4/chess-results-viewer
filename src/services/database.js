@@ -100,8 +100,8 @@ export const dbService = {
     FROM games g
     JOIN player_performances wpf ON wpf.id = g.white_performance_id
     JOIN players wp ON wp.id = wpf.player_id
-    JOIN player_performances bpf ON bpf.id = g.black_performance_id
-    JOIN players bp ON bp.id = bpf.player_id
+    LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
+    LEFT JOIN players bp ON bp.id = bpf.player_id
     WHERE g.tournament_id = ?
     ORDER BY CAST(g.round AS INTEGER), CAST(g.board AS INTEGER)
   `, [tournamentId]),
@@ -253,7 +253,7 @@ export const dbService = {
 
   /** Получить основную информацию об игроке по его ID */
   getPlayerGlobalProfile: (playerId) => query(`
-    SELECT id, canonical_name, fide_id, federation FROM players WHERE id = ?
+    SELECT id, canonical_name, fide_id, federation, national_id FROM players WHERE id = ?
   `, [playerId]).then(res => res[0]),
 
   /** Получить всю турнирную историю игрока */
@@ -270,7 +270,7 @@ export const dbService = {
     FROM player_performances perf
     JOIN tournaments t ON t.id = perf.tournament_id
     WHERE perf.player_id = ?
-    ORDER BY t.start_date DESC
+    ORDER BY t.start_date ASC
   `, [playerId]),
 
   /** Получить всех игроков с агрегированной статистикой (последний рейтинг, кол-во турниров) 
@@ -377,14 +377,14 @@ export const dbService = {
       CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
       COUNT(*) as total_games,
       SUM(CASE WHEN (wpf.player_id = ? AND g.result = '1-0') OR (bpf.player_id = ? AND g.result = '0-1') THEN 1 ELSE 0 END) as wins,
-      SUM(CASE WHEN g.result = '½-½' THEN 1 ELSE 0 END) as draws,
+      SUM(CASE WHEN g.result = '½-½' or g.result='1/2-1/2' THEN 1 ELSE 0 END) as draws,
       SUM(CASE WHEN (wpf.player_id = ? AND g.result = '0-1') OR (bpf.player_id = ? AND g.result = '1-0') THEN 1 ELSE 0 END) as losses
     FROM games g
     JOIN player_performances wpf ON wpf.id = g.white_performance_id
     JOIN players wp ON wp.id = wpf.player_id
     JOIN player_performances bpf ON bpf.id = g.black_performance_id
     JOIN players bp ON bp.id = bpf.player_id
-    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
+    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
     GROUP BY opponent_id, opponent_name
     ORDER BY total_games DESC, opponent_name ASC
   `, [

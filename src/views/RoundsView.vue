@@ -39,21 +39,26 @@
           </thead>
           <tbody>
             <tr v-for="pairing in currentRoundPairings" :key="pairing.id" @click="goToGame(pairing)" :class="{ 'clickable': pairing.pgn_moves }" class="table-row">
-              <td class="text-center text-grey">{{ pairing.board }}</td>
+              <td class="text-center text-grey">{{ pairing.board || '-' }}</td>
+              <!-- Белые (всегда есть) -->
               <td class="text-right">
                 <a href="#" @click.prevent.stop="goToPlayer(pairing.white_player_id)" class="player-link" :class="{ 'font-weight-bold': isWinner('white', pairing) }">
                   {{ pairing.white_name }}
                 </a>
                 <div class="text-caption text-grey">{{ pairing.white_rating }}</div>
               </td>
+              <!-- Результат -->
               <td class="text-center">
-                <v-chip label variant="tonal" class="font-weight-bold">{{ formatResult(pairing.result) }}</v-chip>
+                <v-chip v-if="pairing.black_player_id" label variant="tonal" class="font-weight-bold">{{ formatResult(pairing.result) }}</v-chip>
+                <v-chip v-else label variant="tonal" class="font-weight-bold">Bye</v-chip>
               </td>
+              <!-- Черные (могут отсутствовать) -->
               <td class="text-left">
-                <a href="#" @click.prevent.stop="goToPlayer(pairing.black_player_id)" class="player-link" :class="{ 'font-weight-bold': isWinner('black', pairing) }">
+                <a v-if="pairing.black_player_id" href="#" @click.prevent.stop="goToPlayer(pairing.black_player_id)" class="player-link" :class="{ 'font-weight-bold': isWinner('black', pairing) }">
                   {{ pairing.black_name }}
                 </a>
-                <div class="text-caption text-grey">{{ pairing.black_rating }}</div>
+                <div v-if="pairing.black_player_id" class="text-caption text-grey">{{ pairing.black_rating }}</div>
+                <span v-else class="text-medium-emphasis">Пропуск тура</span>
               </td>
               <td class="text-center">
                 <v-icon v-if="pairing.pgn_moves" class="chevron-icon">mdi-chevron-right</v-icon>
@@ -64,7 +69,8 @@
         
         <v-list v-else lines="two" class="mobile-list">
           <template v-for="(pairing, index) in currentRoundPairings" :key="pairing.id">
-            <v-list-item @click="goToGame(pairing)" :disabled="!pairing.pgn_moves">
+            <!-- Сценарий 1: Обычная игра -->
+            <v-list-item v-if="pairing.black_player_id" @click="goToGame(pairing)" :disabled="!pairing.pgn_moves">
               <template v-slot:prepend>
                 <div class="result-box">
                   <v-chip label variant="tonal" class="font-weight-bold">{{ formatResult(pairing.result) }}</v-chip>
@@ -90,6 +96,25 @@
                 <v-icon v-if="pairing.pgn_moves">mdi-chevron-right</v-icon>
               </template>
             </v-list-item>
+
+            <!-- Сценарий 2: Bye -->
+            <v-list-item v-else>
+              <template v-slot:prepend>
+                <div class="result-box">
+                  <v-chip label variant="tonal" class="font-weight-bold">Bye</v-chip>
+                </div>
+              </template>
+              <div>
+                 <div class="d-flex align-baseline">
+                  <v-icon size="x-small" class="mr-2">mdi-circle-outline</v-icon>
+                  <div class="player-info">
+                    <span class="player-name font-weight-bold">{{ pairing.white_name }}</span>
+                    <span class="player-rating text-body-2 text-grey-darken-1 ml-2">({{ pairing.white_rating }})</span>
+                  </div>
+                </div>
+              </div>
+            </v-list-item>
+
             <v-divider v-if="index < currentRoundPairings.length - 1"></v-divider>
           </template>
         </v-list>
@@ -110,7 +135,14 @@ const router = useRouter();
 const route = useRoute();
 const display = useDisplay();
 
-const selectedRound = ref(1);
+const selectedRound = computed({
+  get() {
+    return store.activeRound;
+  },
+  set(value) {
+    store.activeRound = value;
+  }
+});
 
 const roundsList = computed(() => {
   // 1. Приоритетный источник: данные о турнире

@@ -41,6 +41,18 @@
                 <div :class="display.mdAndUp.value ? 'text-h5' : 'text-h4'" class="font-weight-bold">{{ player.score || '-' }}</div>
               </div>
             </div>
+            <v-divider></v-divider>
+            <v-card-actions>
+              <v-btn
+                :to="{ name: 'GlobalPlayer', params: { playerId: props.playerId } }"
+                color="primary"
+                variant="text"
+                block
+                append-icon="mdi-arrow-right"
+              >
+                Смотреть полную карьеру
+              </v-btn>
+            </v-card-actions>
           </v-card>
 
           <!-- Мобильные табы -->

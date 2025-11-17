@@ -10,13 +10,45 @@
 
   <div v-else-if="store.activeTournament">
     <!-- ЗАГОЛОВОК СТРАНИЦЫ -->
-    <div v-if="!isPlayerOrGamePage"  class="mb-6">
-      <h1 class="text-h4 font-weight-bold">{{ store.activeTournament.name }}</h1>
-      <div class="text-subtitle-1 text-medium-emphasis">
-        <span>{{ store.activeTournament.city }}</span>
-        <span class="mx-2">·</span>
-        <span>{{ store.activeTournament.start_date }}</span>
+    <div class="mb-6 d-flex align-center">
+      <!-- Левая часть: Название и дата -->
+      <div class="flex-grow-1">
+        <h1 class="text-h4 font-weight-bold">{{ store.activeTournament.name }}</h1>
+        <div class="text-subtitle-1 text-medium-emphasis">
+          <span>{{ store.activeTournament.city }}</span>
+          <span class="mx-2">·</span>
+          <span>{{ store.activeTournament.start_date }}</span>
+        </div>
       </div>
+      
+      <!-- Правая часть: Адаптивная кнопка-ссылка -->
+      <v-tooltip location="bottom">
+        <template v-slot:activator="{ props }">
+          <div v-bind="props">
+            <!-- Кнопка для десктопа (с текстом) -->
+            <v-btn
+              :href="chessResultsUrl"
+              target="_blank"
+              variant="text"
+              color="primary"
+              class="d-none d-sm-flex"
+              prepend-icon="mdi-open-in-new"
+            >
+              Chess-Results
+            </v-btn>
+            <!-- Кнопка для мобильных (только иконка) -->
+            <v-btn
+              :href="chessResultsUrl"
+              target="_blank"
+              icon="mdi-open-in-new"
+              variant="text"
+              color="primary"
+              class="d-sm-none"
+            ></v-btn>
+          </div>
+        </template>
+        <span>Посмотреть на chess-results.com</span>
+      </v-tooltip>
     </div>
     
     <!-- НАВИГАЦИЯ ДЛЯ ДЕСКТОПА -->
@@ -59,6 +91,11 @@ const props = defineProps({
 const store = useTournamentStore();
 const display = useDisplay();
 const route = useRoute();
+
+const chessResultsUrl = computed(() => {
+  const tnrId = store.activeTournament?.tnr_id;
+  return tnrId ? `https://chess-results.com/tnr${tnrId}.aspx?lan=11` : '#';
+});
 
 // Проверяем, является ли текущая страница одной из вкладок турнира
 const isTournamentTabPage = computed(() => {

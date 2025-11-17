@@ -17,6 +17,7 @@ export const useTournamentStore = defineStore('tournaments', () => {
   const isLoadingDetails = ref(false);
   const currentTournament = ref(null);
   const isLoadingCurrent = ref(false);
+  const activeRound = ref(1);
 
   // --- Состояние главной страницы ---
   const currentTournamentStandings = ref([]);
@@ -193,6 +194,7 @@ export const useTournamentStore = defineStore('tournaments', () => {
     activeGame.value = null;
     crosstableData.value = [];
     statisticsData.value = [];
+    activeRound.value = 1; 
   }
 
   return {
@@ -201,6 +203,7 @@ export const useTournamentStore = defineStore('tournaments', () => {
     error, isLoading, isLoadingList, isLoadingDetails,
     fetchAllTournaments, fetchTournamentData, fetchPlayerData, fetchGameData, crosstableData, statisticsData, ecoDatabase,
     clearActiveData, currentTournament, isLoadingCurrent, fetchCurrentTournament, latestFinishedTournament,
-    tournamentPodium, fetchHomepageData, fetchHomepageDashboardData, fetchHallOfFameData, currentTournamentStandings, recentGames, nextRoundInfo, isLoadingHomepage
+    tournamentPodium, fetchHomepageData, fetchHomepageDashboardData, fetchHallOfFameData, 
+    currentTournamentStandings, recentGames, nextRoundInfo, isLoadingHomepage, activeRound,
   };
 });

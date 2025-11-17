@@ -32,34 +32,47 @@
     <!-- Основной контент -->
     <div v-else-if="profile">
       <!-- "Hero" Секция -->
-      <v-card class="mb-6 card-hover" variant="tonal" color="primary">
-        <v-card-text class="d-flex flex-column flex-sm-row align-center pa-6">
-          <v-btn
-            v-if="!smAndDown"
-            icon="mdi-arrow-left"
-            variant="text"
-            class="mr-4 align-self-start"
-            @click="router.back()"
-          ></v-btn>
-          <v-avatar color="primary" size="80" class="mr-sm-6 mb-4 mb-sm-0 elevation-4">
-            <span class="text-h3 font-weight-light">{{ getInitials(profile.canonical_name) }}</span>
-          </v-avatar>
-          <div class="text-center text-sm-left">
-            <h1 class="text-h4 font-weight-bold">{{ profile.canonical_name }}</h1>
-            <div class="text-subtitle-1 text-medium-emphasis">
-              <v-icon start size="small">mdi-flag</v-icon>{{ profile.federation }}
+      <v-card class="mb-6">
+        <v-card-text class="pa-4 pa-sm-6">
+          <div class="d-flex flex-column flex-sm-row align-center">
+            <!-- ЛЕВАЯ КОЛОНКА: ИДЕНТИФИКАЦИЯ -->
+            <div class="d-flex align-center flex-grow-1">
+              <v-btn
+                v-if="!smAndDown"
+                icon="mdi-arrow-left"
+                variant="text"
+                class="mr-4"
+                @click="router.back()"
+              ></v-btn>
+              <v-avatar color="primary" size="64" class="mr-4 elevation-2">
+                <span class="text-h4 font-weight-light">{{ getInitials(profile.canonical_name) }}</span>
+              </v-avatar>
+              <div>
+                <h1 class="text-h5 font-weight-bold">{{ profile.canonical_name }}</h1>
+                <div class="text-subtitle-1 text-medium-emphasis d-flex align-center flex-wrap">
+                  <v-icon start size="small">mdi-flag</v-icon>
+                  <span>{{ profile.federation }}</span>
+                  <div v-if="fideProfileUrl || ruChessProfileUrl" class="ml-4">
+                    <v-chip v-if="fideProfileUrl" :href="fideProfileUrl" target="_blank" size="small" prepend-icon="mdi-open-in-new" class="mr-2">FIDE</v-chip>
+                    <v-chip v-if="ruChessProfileUrl" :href="ruChessProfileUrl" target="_blank" size="small" prepend-icon="mdi-open-in-new">ФШР</v-chip>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <v-spacer></v-spacer>
-          <div class="d-flex justify-center ga-2 ga-sm-4 mt-4 mt-sm-0">
-            <div class="text-center px-2">
-              <div class="text-caption">Последний рейтинг</div>
-              <div class="text-h5 font-weight-bold">{{ store.keyMetrics.latestRating || 'N/A' }}</div>
-            </div>
-            <v-divider vertical inset></v-divider>
-            <div class="text-center px-2">
-              <div class="text-caption">Пиковый рейтинг</div>
-              <div class="text-h5 font-weight-bold">{{ store.keyMetrics.peakRating || 'N/A' }}</div>
+
+            <v-divider class="my-4" v-if="smAndDown"></v-divider>
+
+            <!-- ПРАВАЯ КОЛОНКА: РЕЗУЛЬТАТЫ -->
+            <div class="d-flex justify-center ga-4">
+              <div class="text-center px-2">
+                <div class="text-caption">Последний рейтинг</div>
+                <div class="text-h5 font-weight-bold text-primary">{{ store.keyMetrics.latestRating || 'N/A' }}</div>
+              </div>
+              <v-divider vertical></v-divider>
+              <div class="text-center px-2">
+                <div class="text-caption">Пиковый рейтинг</div>
+                <div class="text-h5 font-weight-bold text-primary">{{ store.keyMetrics.peakRating || 'N/A' }}</div>
+              </div>
             </div>
           </div>
         </v-card-text>
@@ -125,7 +138,7 @@
               <v-card class="fill-height card-hover">
                 <v-card-item><v-card-title>График рейтинга</v-card-title><v-card-subtitle>Динамика за всю карьеру</v-card-subtitle></v-card-item>
                 <v-card-text>
-                  <RatingChart v-if="!store.isLoading && store.ratingHistory.labels.length" :chart-data="store.ratingHistory" :aspect-ratio="smAndDown ? 1 : 2.5" />
+                  <RatingChart v-if="!store.isLoading && store.ratingHistory.datasets[0]?.data.length > 0" :chart-data="store.ratingHistory" :aspect-ratio="smAndDown ? 1 : 1.5" />
                   <div v-else class="fill-height d-flex flex-column align-center justify-center text-medium-emphasis ga-4 pa-4"><v-icon size="48">mdi-chart-gantt</v-icon><span>Нет данных для построения графика.</span></div>
                 </v-card-text>
               </v-card>
@@ -190,35 +203,86 @@
 
             <!-- ПРАВЫЙ СТОЛБЕЦ -->
             <v-col cols="12" lg="7">
-              <v-card class="mb-6 card-hover">
-                <v-card-item><v-card-title>Результаты против оппонентов</v-card-title></v-card-item>
-                <v-list class="py-0">
-                  <v-list-item prepend-icon="mdi-arrow-up-bold-circle">
-                    <v-list-item-title>Против игроков сильнее</v-list-item-title>
-                    <v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.processedOpponentStats.vs_stronger.percent" color="primary" height="20" rounded><strong>{{ store.processedOpponentStats.vs_stronger.score }} / {{ store.processedOpponentStats.vs_stronger.total }}</strong></v-progress-linear></v-list-item-subtitle>
-                  </v-list-item>
-                  <v-divider></v-divider>
-                  <v-list-item prepend-icon="mdi-equal-box">
-                    <v-list-item-title>Против равных по силе</v-list-item-title>
-                    <v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.processedOpponentStats.vs_equal.percent" color="secondary" height="20" rounded><strong>{{ store.processedOpponentStats.vs_equal.score }} / {{ store.processedOpponentStats.vs_equal.total }}</strong></v-progress-linear></v-list-item-subtitle>
-                  </v-list-item>
-                  <v-divider></v-divider>
-                  <v-list-item prepend-icon="mdi-arrow-down-bold-circle">
-                    <v-list-item-title>Против игроков слабее</v-list-item-title>
-                    <v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.processedOpponentStats.vs_weaker.percent" color="primary" height="20" rounded><strong>{{ store.processedOpponentStats.vs_weaker.score }} / {{ store.processedOpponentStats.vs_weaker.total }}</strong></v-progress-linear></v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
-              </v-card>
-              <v-card class="mb-6 card-hover">
-                <v-card-item><v-card-title>Динамика в турнире</v-card-title></v-card-item>
-                <v-list class="py-0">
-                  <v-list-item prepend-icon="mdi-numeric-1-box-multiple-outline"><v-list-item-title>Начало</v-list-item-title><v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.performanceByRounds.opening.percent" color="primary" height="20" rounded><strong>{{ store.performanceByRounds.opening.score }} / {{ store.performanceByRounds.opening.total }}</strong></v-progress-linear></v-list-item-subtitle></v-list-item>
-                  <v-divider></v-divider>
-                  <v-list-item prepend-icon="mdi-numeric-2-box-multiple-outline"><v-list-item-title>Середина</v-list-item-title><v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.performanceByRounds.middlegame.percent" color="secondary" height="20" rounded><strong>{{ store.performanceByRounds.middlegame.score }} / {{ store.performanceByRounds.middlegame.total }}</strong></v-progress-linear></v-list-item-subtitle></v-list-item>
-                  <v-divider></v-divider>
-                  <v-list-item prepend-icon="mdi-numeric-3-box-multiple-outline"><v-list-item-title>Финиш</v-list-item-title><v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.performanceByRounds.endgame.percent" color="primary" height="20" rounded><strong>{{ store.performanceByRounds.endgame.score }} / {{ store.performanceByRounds.endgame.total }}</strong></v-progress-linear></v-list-item-subtitle></v-list-item>
-                </v-list>
-              </v-card>
+            <v-card class="mb-6 card-hover">
+              <v-card-item><v-card-title>Результаты против оппонентов</v-card-title></v-card-item>
+              <v-list class="py-0">
+                <v-list-item prepend-icon="mdi-arrow-up-bold-circle">
+                  <v-list-item-title>Против игроков сильнее</v-list-item-title>
+                  <v-list-item-subtitle>
+                    <v-progress-linear class="my-2" :model-value="store.processedOpponentStats.vs_stronger.percent" color="primary" height="8" rounded></v-progress-linear>
+                  </v-list-item-subtitle>
+                  <template #append>
+                    <div class="stat-numbers text-right">
+                      <div class="font-weight-bold">{{ store.processedOpponentStats.vs_stronger.score }} / {{ store.processedOpponentStats.vs_stronger.total }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ store.processedOpponentStats.vs_stronger.percent }}%</div>
+                    </div>
+                  </template>
+                </v-list-item>
+                <v-divider></v-divider>
+                <v-list-item prepend-icon="mdi-equal-box">
+                  <v-list-item-title>Против равных по силе</v-list-item-title>
+                  <v-list-item-subtitle>
+                    <v-progress-linear class="my-2" :model-value="store.processedOpponentStats.vs_equal.percent" color="secondary" height="8" rounded></v-progress-linear>
+                  </v-list-item-subtitle>
+                   <template #append>
+                    <div class="stat-numbers text-right">
+                      <div class="font-weight-bold">{{ store.processedOpponentStats.vs_equal.score }} / {{ store.processedOpponentStats.vs_equal.total }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ store.processedOpponentStats.vs_equal.percent }}%</div>
+                    </div>
+                  </template>
+                </v-list-item>
+                <v-divider></v-divider>
+                <v-list-item prepend-icon="mdi-arrow-down-bold-circle">
+                  <v-list-item-title>Против игроков слабее</v-list-item-title>
+                  <v-list-item-subtitle>
+                    <v-progress-linear class="my-2" :model-value="store.processedOpponentStats.vs_weaker.percent" color="primary" height="8" rounded></v-progress-linear>
+                  </v-list-item-subtitle>
+                   <template #append>
+                    <div class="stat-numbers text-right">
+                      <div class="font-weight-bold">{{ store.processedOpponentStats.vs_weaker.score }} / {{ store.processedOpponentStats.vs_weaker.total }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ store.processedOpponentStats.vs_weaker.percent }}%</div>
+                    </div>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </v-card>
+            <v-card class="mb-6 card-hover">
+              <v-card-item><v-card-title>Динамика в турнире</v-card-title></v-card-item>
+              <v-list class="py-0">
+                <v-list-item prepend-icon="mdi-numeric-1-box-multiple-outline">
+                  <v-list-item-title>Начало</v-list-item-title>
+                  <v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.performanceByRounds.opening.percent" color="primary" height="8" rounded></v-progress-linear></v-list-item-subtitle>
+                  <template #append>
+                    <div class="stat-numbers text-right">
+                      <div class="font-weight-bold">{{ store.performanceByRounds.opening.score }} / {{ store.performanceByRounds.opening.total }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ store.performanceByRounds.opening.percent }}%</div>
+                    </div>
+                  </template>
+                </v-list-item>
+                <v-divider></v-divider>
+                <v-list-item prepend-icon="mdi-numeric-2-box-multiple-outline">
+                  <v-list-item-title>Середина</v-list-item-title>
+                  <v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.performanceByRounds.middlegame.percent" color="secondary" height="8" rounded></v-progress-linear></v-list-item-subtitle>
+                  <template #append>
+                    <div class="stat-numbers text-right">
+                      <div class="font-weight-bold">{{ store.performanceByRounds.middlegame.score }} / {{ store.performanceByRounds.middlegame.total }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ store.performanceByRounds.middlegame.percent }}%</div>
+                    </div>
+                  </template>
+                </v-list-item>
+                <v-divider></v-divider>
+                <v-list-item prepend-icon="mdi-numeric-3-box-multiple-outline">
+                  <v-list-item-title>Финиш</v-list-item-title>
+                  <v-list-item-subtitle><v-progress-linear class="my-2" :model-value="store.performanceByRounds.endgame.percent" color="primary" height="8" rounded></v-progress-linear></v-list-item-subtitle>
+                  <template #append>
+                    <div class="stat-numbers text-right">
+                      <div class="font-weight-bold">{{ store.performanceByRounds.endgame.score }} / {{ store.performanceByRounds.endgame.total }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ store.performanceByRounds.endgame.percent }}%</div>
+                    </div>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </v-card>
               <v-card class="card-hover">
                 <v-card-item><v-card-title>Ключевые партии</v-card-title></v-card-item>
                 <v-list lines="two" class="py-0">
@@ -297,7 +361,7 @@
             <v-data-table
               v-if="!smAndDown"
               :headers="historyHeaders"
-              :items="store.playerCareer"
+              :items="sortedPlayerCareer"
               item-value="tournament_id"
               density="comfortable"
               hover
@@ -310,7 +374,7 @@
 
             <!-- Cписок для МОБИЛЬНЫХ -->
             <v-list v-else lines="three">
-              <template v-for="(item, index) in store.playerCareer" :key="item.tournament_id">
+              <template v-for="(item, index) in sortedPlayerCareer" :key="item.tournament_id">
                 <v-list-item @click="goToTournament(item.tournament_id)">
                   <v-list-item-title class="wrap-text font-weight-bold mb-1">{{ item.tournament_name }}</v-list-item-title>
                   <v-list-item-subtitle class="d-flex justify-space-between align-center">
@@ -358,6 +422,20 @@ const ecoDb = ref(null);
 
 // --- COMPUTED ---
 const profile = computed(() => store.playerProfile);
+
+const sortedPlayerCareer = computed(() => {
+  return [...store.playerCareer].reverse();
+});
+
+const fideProfileUrl = computed(() => {
+  const fideId = store.playerProfile?.fide_id;
+  return fideId ? `https://ratings.fide.com/profile/${fideId}` : null;
+});
+
+const ruChessProfileUrl = computed(() => {
+  const ruChessId = store.playerProfile?.national_id; // Предполагаем, что national_id - это ID ФШР
+  return ruChessId ? `https://ratings.ruchess.ru/people/${ruChessId}` : null;
+});
 
 const playerStatus = computed(() => {
   const participation = store.participationInCurrentTournament;

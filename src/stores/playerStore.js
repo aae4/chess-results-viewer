@@ -49,25 +49,26 @@ export const usePlayerStore = defineStore('player', () => {
       return { labels: [], datasets: [] };
     }
     
-    const labels = [];
-    const ratingData = [];
-    
-    playerCareer.value.forEach(perf => {
-      if (perf.start_date && perf.rating_at_tournament) {
-        labels.push(perf.start_date);
-        ratingData.push(perf.rating_at_tournament);
-      }
-    });
+    const dataPoints = playerCareer.value
+      .filter(perf => perf.start_date && perf.rating_at_tournament)
+      .map(perf => ({
+        x: perf.start_date,
+        y: perf.rating_at_tournament,
+        tournamentName: perf.tournament_name,
+        ratingChange: perf.rating_change,
+      }));
 
     return {
-      labels,
       datasets: [
         {
-          label: 'Рейтинг',
+          label: 'Рейтинг FIDE',
           backgroundColor: 'rgba(0, 82, 204, 0.2)',
           borderColor: '#0052CC',
           pointBackgroundColor: '#0052CC',
-          data: ratingData,
+          pointHoverRadius: 6,
+          pointHoverBorderWidth: 2,
+          pointHoverBackgroundColor: 'white',
+          data: dataPoints,
           fill: true,
           tension: 0.1,
         },
