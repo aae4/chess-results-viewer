@@ -7,6 +7,43 @@
 
     <!-- 2. ЕДИНАЯ АДАПТИВНАЯ ТАБЛИЦА -->
     <v-card v-else>
+      <v-toolbar flat density="compact">
+        <v-toolbar-title class="text-subtitle-1 font-weight-bold">Кросс-таблица</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-menu location="bottom end">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" icon="mdi-help-circle-outline" variant="text"></v-btn>
+          </template>
+          <v-list density="compact" class="legend-list">
+            <v-list-subheader>УСЛОВНЫЕ ОБОЗНАЧЕНИЯ</v-list-subheader>
+            <v-list-item>
+              <div class="d-flex align-center">
+                <div class="cell-example result-win"><div class="cell-content">18<v-icon icon="mdi-circle-outline" size="x-small" class="ml-1"></v-icon></div></div>
+                <div class="ml-3 text-caption">Победа над №18 белыми</div>
+              </div>
+            </v-list-item>
+            <v-list-item>
+              <div class="d-flex align-center">
+                <div class="cell-example result-draw"><div class="cell-content">19<v-icon icon="mdi-circle" size="x-small" class="ml-1"></v-icon></div></div>
+                <div class="ml-3 text-caption">Ничья с №19 черными</div>
+              </div>
+            </v-list-item>
+            <v-list-item>
+              <div class="d-flex align-center">
+                <div class="cell-example result-loss"><div class="cell-content is-technical">21<v-icon icon="mdi-circle" size="x-small" class="ml-1"></v-icon></div></div>
+                <div class="ml-3 text-caption">Технический результат</div>
+              </div>
+            </v-list-item>
+             <v-list-item>
+              <div class="d-flex align-center">
+                <div class="cell-example result-win"><div class="cell-content font-weight-bold">+</div></div>
+                <div class="ml-3 text-caption">Bye (пропуск тура)</div>
+              </div>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-toolbar>
+      <v-divider></v-divider>
       <div class="crosstable-wrapper">
         <!-- Добавляем динамический класс :class="{ 'is-mobile': mobile }" -->
         <v-table class="crosstable" :class="{ 'is-mobile': mobile }" density="compact">
@@ -36,7 +73,27 @@
                 :class="getResultCellClass(result)"
                 @click="goToGame(result)"
               >
-                <v-tooltip v-if="result" location="top" :disabled="!result.opponent_name">
+
+                <v-tooltip v-if="result && result.is_bye" location="top">
+                  <template v-slot:activator="{ props }">
+                    <div v-bind="props" class="cell-content font-weight-bold text-success">
+                      +
+                    </div>
+                  </template>
+                  <span>Пропуск тура (Bye)</span>
+                </v-tooltip>
+
+                <v-tooltip v-else-if="result && result.is_technical" location="top">
+                  <template v-slot:activator="{ props }">
+                    <div v-bind="props" class="cell-content font-weight-bold is-technical">
+                      <span class="mr-1">{{ result.opponent_starting_rank }}</span>
+                      <v-icon :icon="getColorIcon(result.color)" size="x-small"></v-icon>
+                    </div>
+                  </template>
+                  <span>{{ result.points === 1 ? 'Тех. победа' : 'Тех. поражение' }} vs {{ result.opponent_name }}</span>
+                </v-tooltip>
+
+                <v-tooltip v-else-if="result" location="top" :disabled="!result.opponent_name">
                   <template v-slot:activator="{ props }">
                     <div v-bind="props" class="cell-content">
                       <span class="mr-1">{{ result.opponent_starting_rank }}</span>
@@ -203,5 +260,8 @@ td.sticky-col:nth-child(2) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.cell-content.is-technical {
+  border: 1px dashed rgba(var(--v-theme-on-surface), 0.4);
 }
 </style>

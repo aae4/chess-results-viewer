@@ -31,7 +31,7 @@ export function buildCrosstable(rawData, roundsCount) {
   playersMap.forEach(player => {
     let totalPoints = 0;
     player.games.forEach(game => {
-      if (!game.round || !game.opponent_player_id) return;
+      if (!game.round) return;
       
       const roundIndex = parseInt(game.round) - 1;
       const points = getPointsFromResult(formatPlayerResult(game.result, game.color));
@@ -49,7 +49,8 @@ export function buildCrosstable(rawData, roundsCount) {
         opponent_name: game.opponent_name,
         opponent_starting_rank: opponent?.starting_rank || '?',
         game_id: game.game_id,
-        is_technical: game.is_technical
+        is_technical: game.is_technical,
+        is_bye: game.is_bye,
       };
     });
     player.totalPoints = totalPoints;

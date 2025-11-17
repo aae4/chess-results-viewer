@@ -108,8 +108,13 @@
                       <div class="text-caption">Тур</div>
                       <div class="font-weight-medium">{{ game.round }}</div>
                     </div>
+
+                    <div v-if="isBye(game)" class="flex-grow-1 d-flex align-center text-medium-emphasis">
+                      <v-icon class="mr-2">mdi-skip-next-circle-outline</v-icon>
+                      <span class="font-weight-bold">Пропуск тура (Bye)</span>
+                    </div>
                     
-                    <div class="flex-grow-1">
+                    <div v-else class="flex-grow-1">
                       <div class="d-flex align-center">
                         <v-icon size="x-small" :icon="getColorIcon(game.color)" class="mr-2"></v-icon>
                         <span class="font-weight-bold">vs {{ game.opponent_name }}</span>
@@ -121,6 +126,7 @@
                     <div class="ml-auto d-flex align-center">
                        <v-chip
                           :color="getResultChipColor(game)"
+                          :variant="game.is_technical === 1 ? 'outlined' : 'tonal'"
                           label
                           class="font-weight-bold result-chip"
                         >
@@ -174,21 +180,32 @@ watch(() => props.playerId, (newPlayerId) => {
 const goBack = () => router.back();
 const viewGame = (game) => { if (game.pgn_moves) router.push({ name: 'Game', params: { gameId: game.id } }); };
 
+const isBye = (game) => {
+  return game.opponent_name === 'Пропуск тура';
+};
+
 const getResultChipColor = (game) => {
+  if (isBye(game)) return 'success';
   if (!isGamePlayed(game)) return 'grey-lighten-1';
   const result = formatPlayerResult(game.result, game.color);
   if (result === '1') return 'success';
   if (result === '0') return 'error';
+  // if (result === '+--') return 'success';
+  // if (result === '--+') return 'error';
   return 'grey-darken-1';
 };
 
 const getResultText = (game) => {
-  if (!isGamePlayed(game)) return 'Не сыграна';
+  if (isBye(game)) return '+1';
+
+  // if (!isGamePlayed(game)) return 'Не сыграна';
+
   const result = formatPlayerResult(game.result, game.color);
+
   if (result === '1') return 'Победа';
   if (result === '0') return 'Поражение';
-  if (result === '+--') return 'Техническая победа';
-  if (result === '--+') return 'Техническое поражение';
+  if (result === '+--') return 'Тех. победа';
+  if (result === '--+') return 'Тех. поражение';
   return 'Ничья';
 };
 
@@ -241,7 +258,7 @@ const isGamePlayed = (game) => {
 }
 
 .result-chip {
-  width: 110px;
+  width: 120px;
   justify-content: center;
 }
 

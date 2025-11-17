@@ -15,7 +15,7 @@ export function formatPlayerResult(resultStr, playerColor) {
     return playerColor === 'w' ? '--+' : '+--'
   }
   if (result === "*") return '*';
-  if (result === '½-½') return '½';
+  if (result === '½-½' || result === '1/2-1/2') return '½';
   if (playerColor === 'w') {
     return result === '1-0' ? '1' : '0';
   }
@@ -70,10 +70,10 @@ export function getPointsFromResult(resultStr) {
     if (!resultStr || resultStr.trim() === '') {
         return null;
     }
-    if (resultStr.includes('1') && !resultStr.includes('½') && !resultStr.includes('1/2')) return 1;
-    if (resultStr.includes('½') || resultStr.includes('1/2')) return 0.5;
     if (resultStr.includes('+--')) return 1;
     if (resultStr.includes('--+')) return 0;
+    if (resultStr.includes('1') && !resultStr.includes('½') && !resultStr.includes('1/2')) return 1;
+    if (resultStr.includes('½') || resultStr.includes('1/2')) return 0.5;
     if (resultStr.includes('+')) return 1;
     if (resultStr.includes('0')) return 0;
     if (resultStr.includes('-')) return 0;

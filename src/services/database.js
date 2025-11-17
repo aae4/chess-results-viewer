@@ -124,17 +124,39 @@ export const dbService = {
   `, [playerId, tournamentId]).then(res => res[0]),
 
   /** Получить все партии игрока в рамках одного турнира */
+  // getPlayerGamesInTournament: (playerId, tournamentId) => query(`
+  //   SELECT
+  //     g.id, g.round, g.board, g.result, g.pgn_moves,
+  //     CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as color,
+  //     CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
+  //     CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating
+  //   FROM games g
+  //   JOIN player_performances wpf ON wpf.id = g.white_performance_id
+  //   JOIN players wp ON wp.id = wpf.player_id
+  //   JOIN player_performances bpf ON bpf.id = g.black_performance_id
+  //   JOIN players bp ON bp.id = bpf.player_id
+  //   WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.tournament_id = ?
+  //   ORDER BY CAST(g.round AS INTEGER)
+  // `, [playerId, playerId, playerId, playerId, playerId, tournamentId]),
   getPlayerGamesInTournament: (playerId, tournamentId) => query(`
     SELECT
       g.id, g.round, g.board, g.result, g.pgn_moves,
+      -- Для bye цвет всегда будет 'w', так как игрок без соперника "играет" белыми
       CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as color,
-      CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
+      
+      -- Используем COALESCE, чтобы заменить NULL от LEFT JOIN на понятный текст
+      COALESCE(CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END, 'Пропуск тура') as opponent_name,
+      
       CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating
     FROM games g
+    -- JOIN для нашего игрока остается, так как он всегда есть
     JOIN player_performances wpf ON wpf.id = g.white_performance_id
     JOIN players wp ON wp.id = wpf.player_id
-    JOIN player_performances bpf ON bpf.id = g.black_performance_id
-    JOIN players bp ON bp.id = bpf.player_id
+    
+    -- Заменяем JOIN на LEFT JOIN для оппонента ===
+    LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
+    LEFT JOIN players bp ON bp.id = bpf.player_id
+    
     WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.tournament_id = ?
     ORDER BY CAST(g.round AS INTEGER)
   `, [playerId, playerId, playerId, playerId, playerId, tournamentId]),
@@ -157,6 +179,30 @@ export const dbService = {
   `, [gameId]).then(res => res[0]),
 
   /** Получить все данные, необходимые для построения кросс-таблицы. */
+  // getDataForCrosstable: (tournamentId) => query(`
+  //   SELECT
+  //     p.id as player_id,
+  //     p.canonical_name as player_name,
+  //     perf.starting_rank,
+  //     g.round,
+  //     g.result,
+  //     g.board,
+  //     g.is_technical,
+  // 	  g.id as game_id,
+  //     CASE WHEN wpf.player_id = p.id THEN 'w' ELSE 'b' END as color,
+  //     CASE WHEN wpf.player_id = p.id THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
+  //     CASE WHEN wpf.player_id = p.id THEN bpf.player_id ELSE wpf.player_id END as opponent_player_id
+  //   FROM players p
+  //   JOIN player_performances perf ON p.id = perf.player_id
+  //   LEFT JOIN games g ON (
+  //     (g.white_performance_id = perf.id OR g.black_performance_id = perf.id) AND g.tournament_id = perf.tournament_id
+  //   )
+  //   LEFT JOIN player_performances wpf ON wpf.id = g.white_performance_id
+  //   LEFT JOIN players wp ON wp.id = wpf.player_id
+  //   LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
+  //   LEFT JOIN players bp ON bp.id = bpf.player_id
+  //   WHERE perf.tournament_id = ?
+  // `, [tournamentId]),
   getDataForCrosstable: (tournamentId) => query(`
     SELECT
       p.id as player_id,
@@ -165,8 +211,9 @@ export const dbService = {
       g.round,
       g.result,
       g.board,
+      g.id as game_id,
       g.is_technical,
-  	  g.id as game_id,
+      CASE WHEN g.black_performance_id IS NULL THEN 1 ELSE 0 END as is_bye,
       CASE WHEN wpf.player_id = p.id THEN 'w' ELSE 'b' END as color,
       CASE WHEN wpf.player_id = p.id THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
       CASE WHEN wpf.player_id = p.id THEN bpf.player_id ELSE wpf.player_id END as opponent_player_id
@@ -351,7 +398,7 @@ export const dbService = {
   getPlayerGamesForAnalytics: (playerId) => query(`
     SELECT
       g.id as game_id,
-      t.id as tournament_id, -- <-- ДОБАВЛЕНО ЭТО ПОЛЕ
+      t.id as tournament_id,
       g.result,
       CAST(g.round AS INTEGER) as round,
       t.rounds_count,
@@ -364,7 +411,7 @@ export const dbService = {
     JOIN player_performances bpf ON bpf.id = g.black_performance_id
     JOIN players bp ON bp.id = bpf.player_id
     JOIN tournaments t ON t.id = g.tournament_id
-    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
+    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
   `, [playerId, playerId, playerId, playerId, playerId]),
 
   /** 
