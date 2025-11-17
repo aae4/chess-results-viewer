@@ -201,6 +201,6 @@ export const useTournamentStore = defineStore('tournaments', () => {
     error, isLoading, isLoadingList, isLoadingDetails,
     fetchAllTournaments, fetchTournamentData, fetchPlayerData, fetchGameData, crosstableData, statisticsData, ecoDatabase,
     clearActiveData, currentTournament, isLoadingCurrent, fetchCurrentTournament, latestFinishedTournament,
-    tournamentPodium, fetchHomepageData, fetchHomepageDashboardData, fetchHallOfFameData, currentTournamentStandings, recentGames, nextRoundInfo
+    tournamentPodium, fetchHomepageData, fetchHomepageDashboardData, fetchHallOfFameData, currentTournamentStandings, recentGames, nextRoundInfo, isLoadingHomepage
   };
 });

@@ -1,5 +1,18 @@
 <template>
-  <div>
+  <div v-if="isLoading">
+    <!-- Skeleton для Hero-секции -->
+    <v-skeleton-loader type="image" height="400px" class="mb-8"></v-skeleton-loader>
+    <!-- Skeleton для дашборда -->
+    <v-row>
+      <v-col cols="12" lg="8">
+        <v-skeleton-loader type="heading, list-item-avatar-two-line@3"></v-skeleton-loader>
+      </v-col>
+      <v-col cols="12" lg="4">
+        <v-skeleton-loader type="heading, list-item-two-line@2"></v-skeleton-loader>
+      </v-col>
+    </v-row>
+  </div>
+  <div v-else>
     <!-- Блок 1: HERO -->
     <v-sheet
       class="hero-section d-flex flex-column justify-center align-center text-center pa-4 mb-8"
@@ -14,9 +27,9 @@
           class="d-inline-block text-left mx-auto sub-hero-card elevation-8">
           <v-card-item>
             <template #prepend>
-              <v-chip color="red" label class="font-weight-bold mr-2">
-                <v-icon start icon="mdi-broadcast"></v-icon>
-                LIVE
+              <v-chip :color="currentTournamentInfo.chipColor" label class="font-weight-bold mr-2">
+                <v-icon start :icon="currentTournamentInfo.icon"></v-icon>
+                {{ currentTournamentInfo.text }}
               </v-chip>
             </template>
             <v-card-title class="font-weight-bold">{{ currentTournament.name }}</v-card-title>
@@ -154,6 +167,8 @@ import { useTournamentStore } from '@/stores/tournamentStore';
 const tournamentStore = useTournamentStore();
 onMounted(() => tournamentStore.fetchHomepageDashboardData());
 
+const isLoading = computed(() => tournamentStore.isLoadingHomepage);
+
 const currentTournament = computed(() => tournamentStore.currentTournament);
 const standings = computed(() => (tournamentStore.currentTournamentStandings || []).slice(0, 5));
 const recentGames = computed(() => tournamentStore.recentGames || []);
@@ -174,6 +189,21 @@ const getGameResultChip = (result) => {
     default: return { text: result, color: 'grey' };
   }
 };
+
+const currentTournamentInfo = computed(() => {
+  const status = tournamentStore.currentTournament?.status;
+  if (status === 'live') {
+    return { text: 'LIVE', icon: 'mdi-broadcast', color: 'primary', variant: 'tonal', chipColor: 'red' };
+  }
+  if (status === 'upcoming') {
+    return { text: 'СКОРО', icon: 'mdi-calendar-clock', color: 'secondary', variant: 'tonal', chipColor: 'secondary' };
+  }
+  if (status === 'recent') {
+    return { text: 'НЕДАВНО ЗАВЕРШИЛСЯ', icon: 'mdi-history', color: undefined, variant: 'elevated', chipColor: 'primary' };
+  }
+  // Запасной вариант, если currentTournament не определен
+  return { text: 'Последний турнир', icon: 'mdi-new-box', color: undefined, variant: 'elevated', chipColor: 'primary' };
+});
 </script>
 
 <style scoped>
