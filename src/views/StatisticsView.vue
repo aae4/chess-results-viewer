@@ -196,7 +196,6 @@ const goToGame = (gameId) => {
 };
 
 const goToPlayer = (playerId) => {
-  console.log(playerId)
   if (playerId) router.push({ name: 'Player', params: { tournamentId: store.activeTournament.id, playerId: playerId  } });
 }
 

@@ -142,7 +142,7 @@ export const dbService = {
   /** Получить детали одной конкретной партии по ее ID */
   getGameDetails: (gameId) => query(`
     SELECT 
-      g.id, g.round, g.board, g.result, g.pgn_moves, g.eco_code,
+      g.id, g.round, g.board, g.result, g.pgn_moves, g.eco_code, g.is_technical,
       wp.canonical_name as white_name, bp.canonical_name as black_name,
       wpf.rating_at_tournament as white_rating, bpf.rating_at_tournament as black_rating,
       wp.id as white_player_id, bp.id as black_player_id,
@@ -165,6 +165,7 @@ export const dbService = {
       g.round,
       g.result,
       g.board,
+      g.is_technical,
   	  g.id as game_id,
       CASE WHEN wpf.player_id = p.id THEN 'w' ELSE 'b' END as color,
       CASE WHEN wpf.player_id = p.id THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
@@ -188,6 +189,7 @@ export const dbService = {
       g.result,
       g.pgn_moves,
       g.eco_code,
+      g.is_technical,
       wpf.rating_at_tournament as white_rating,
       bpf.rating_at_tournament as black_rating,
       wp.canonical_name as white_name,
@@ -437,6 +439,7 @@ export const dbService = {
       JOIN players AS black_player ON pp_black.player_id = black_player.id
       WHERE g.tournament_id = ? 
       AND g.result is not null
+      AND g.pgn_moves is not null
       ORDER BY 
         CAST(g.round AS INTEGER) DESC, -- Сортируем по номеру тура (сначала последние)
         g.id DESC                      -- В рамках одного тура, последние добавленные партии будут первыми

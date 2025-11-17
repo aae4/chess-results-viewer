@@ -8,6 +8,12 @@
  */
 export function formatPlayerResult(resultStr, playerColor) {
   const result = formatResult(resultStr); // Приводим к каноническому виду
+  if (result === '+--') {
+    return playerColor === 'w' ? '+--' : '--+'
+  }
+  if (result === '--+') {
+    return playerColor === 'w' ? '--+' : '+--'
+  }
   if (result === "*") return '*';
   if (result === '½-½') return '½';
   if (playerColor === 'w') {
@@ -25,6 +31,7 @@ export function formatPlayerResult(resultStr, playerColor) {
  * @returns {string} - Каноническая строка результата.
  */
 export function formatResult(resultStr) {
+  resultStr = resultStr.replaceAll(/\s/g,'')
   if (!resultStr) return '*';
   const str = resultStr.trim();
   if (str.includes('1-0') || str === '1') return '1-0';
@@ -65,6 +72,8 @@ export function getPointsFromResult(resultStr) {
     }
     if (resultStr.includes('1') && !resultStr.includes('½') && !resultStr.includes('1/2')) return 1;
     if (resultStr.includes('½') || resultStr.includes('1/2')) return 0.5;
+    if (resultStr.includes('+--')) return 1;
+    if (resultStr.includes('--+')) return 0;
     if (resultStr.includes('+')) return 1;
     if (resultStr.includes('0')) return 0;
     if (resultStr.includes('-')) return 0;

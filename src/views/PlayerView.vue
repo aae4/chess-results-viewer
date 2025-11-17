@@ -187,6 +187,8 @@ const getResultText = (game) => {
   const result = formatPlayerResult(game.result, game.color);
   if (result === '1') return 'Победа';
   if (result === '0') return 'Поражение';
+  if (result === '+--') return 'Техническая победа';
+  if (result === '--+') return 'Техническое поражение';
   return 'Ничья';
 };
 

@@ -48,7 +48,8 @@ export function buildCrosstable(rawData, roundsCount) {
         color: game.color,
         opponent_name: game.opponent_name,
         opponent_starting_rank: opponent?.starting_rank || '?',
-        game_id: game.game_id
+        game_id: game.game_id,
+        is_technical: game.is_technical
       };
     });
     player.totalPoints = totalPoints;

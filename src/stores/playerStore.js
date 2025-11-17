@@ -128,7 +128,6 @@ export const usePlayerStore = defineStore('player', () => {
 
   const processedH2HStats = computed(() => {
     if (!h2hStats.value) return [];
-    console.log(h2hStats.value)
     return h2hStats.value;
   });
 
