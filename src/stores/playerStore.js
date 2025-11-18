@@ -8,6 +8,7 @@ export const usePlayerStore = defineStore('player', () => {
   // --- СОСТОЯНИЕ ---
   const playerProfile = ref(null);
   const playerCareer = ref([]);
+  const nextGame = ref(null);
   const isLoading = ref(false);
   const error = ref(null);
 
@@ -235,11 +236,24 @@ export const usePlayerStore = defineStore('player', () => {
       playerProfile.value = profileData;
       playerCareer.value = careerData;
 
+      await fetchNextGame(playerId);
+
     } catch (e) {
       error.value = e.message;
       console.error("Ошибка при загрузке глобального профиля игрока:", e);
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  async function fetchNextGame(playerId) {
+    try {
+      // Загружаем следующую игру (без результата)
+      const game = await dbService.getPlayerNextGame(playerId);
+      nextGame.value = game || null;
+    } catch (e) {
+      console.error("Ошибка при загрузке следующей игры:", e);
+      nextGame.value = null;
     }
   }
   
@@ -272,6 +286,7 @@ export const usePlayerStore = defineStore('player', () => {
   function clearPlayerData() {
     playerProfile.value = null;
     playerCareer.value = [];
+    nextGame.value = null;
     opponentStats.value = null;
     openingStats.value = null;
     h2hStats.value = null;
@@ -295,12 +310,14 @@ export const usePlayerStore = defineStore('player', () => {
   return {
     playerProfile,
     playerCareer,
+    nextGame,
     isLoading,
     error,
     careerStats,
     ratingHistory,
     keyMetrics,
     fetchPlayerData,
+    fetchNextGame,
     clearPlayerData,
     playerList, isLoadingList, errorList,
     fetchAllPlayers, opponentStats, openingStats, h2hStats, isLoadingAnalytics,

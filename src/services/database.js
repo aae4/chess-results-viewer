@@ -188,7 +188,7 @@ export const dbService = {
   //     g.result,
   //     g.board,
   //     g.is_technical,
-  // 	  g.id as game_id,
+  //     g.id as game_id,
   //     CASE WHEN wpf.player_id = p.id THEN 'w' ELSE 'b' END as color,
   //     CASE WHEN wpf.player_id = p.id THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
   //     CASE WHEN wpf.player_id = p.id THEN bpf.player_id ELSE wpf.player_id END as opponent_player_id
@@ -413,6 +413,41 @@ export const dbService = {
     JOIN tournaments t ON t.id = g.tournament_id
     WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
   `, [playerId, playerId, playerId, playerId, playerId]),
+
+  /** 
+   * Находит следующую игру для конкретного игрока.
+   * Ищет записи в таблице games, где результат пуст (NULL или ''),
+   * но пары уже сформированы.
+   */
+  getPlayerNextGame: (playerId) => query(`
+    SELECT
+      g.id as game_id,
+      t.id as tournament_id,
+      t.name as tournament_name,
+      t.time_control,
+      g.round,
+      g.board,
+      g.game_date,
+      -- Цвет фигур относительно запрашиваемого игрока
+      CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as color,
+      -- Имя соперника (или 'Пропуск тура')
+      COALESCE(CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END, 'Пропуск тура') as opponent_name,
+      -- ID соперника (может быть NULL для bye)
+      CASE WHEN wpf.player_id = ? THEN bpf.player_id ELSE wpf.player_id END as opponent_id,
+      -- Рейтинг соперника
+      CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating
+    FROM games g
+    JOIN tournaments t ON t.id = g.tournament_id
+    JOIN player_performances wpf ON wpf.id = g.white_performance_id
+    JOIN players wp ON wp.id = wpf.player_id
+    LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
+    LEFT JOIN players bp ON bp.id = bpf.player_id
+    WHERE
+      (wpf.player_id = ? OR bpf.player_id = ?) -- Игрок либо белый, либо черный
+      AND (g.result IS NULL OR g.result = '')   -- Игра не завершена
+    ORDER BY t.start_date DESC, CAST(g.round AS INTEGER) ASC
+    LIMIT 1
+  `, [playerId, playerId, playerId, playerId, playerId, playerId]).then(res => res[0]),
 
   /** 
    * Находит самый релевантный "текущий" турнир по трехуровневой логике.

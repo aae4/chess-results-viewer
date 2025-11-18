@@ -79,9 +79,74 @@
       </v-card>
 
       <!-- ======================================================= -->
+      <!-- =========== СЛЕДУЮЩАЯ ИГРА ============================ -->
+      <!-- ======================================================= -->
+      <v-card v-if="store.nextGame" class="mb-6" elevation="3" border>
+        <v-card-item>
+          <template #prepend>
+            <v-icon color="primary" icon="mdi-chess-queen" size="large"></v-icon>
+          </template>
+          <v-card-title>Следующая партия</v-card-title>
+          <v-card-subtitle>{{ store.nextGame.tournament_name }}</v-card-subtitle>
+          <template #append>
+            <v-chip color="primary" variant="flat" size="small">Тур {{ store.nextGame.round }}</v-chip>
+          </template>
+        </v-card-item>
+
+        <v-divider></v-divider>
+
+        <v-card-text>
+          <div class="d-flex flex-column flex-sm-row align-center justify-space-between ga-4">
+            <!-- ВАШ ЦВЕТ -->
+            <div class="d-flex align-center ga-3">
+              <div class="text-center">
+                <div class="text-caption text-medium-emphasis mb-1">Ваш цвет</div>
+                <v-sheet 
+                  :color="store.nextGame.color === 'w' ? 'white' : 'black'" 
+                  :class="store.nextGame.color === 'w' ? 'text-black' : 'text-white'"
+                  class="d-flex align-center justify-center rounded-circle border"
+                  width="50" height="50" elevation="2"
+                >
+                  <v-icon size="30">{{ store.nextGame.color === 'w' ? 'mdi-chess-pawn' : 'mdi-chess-pawn' }}</v-icon>
+                </v-sheet>
+              </div>
+              <div>
+                <div class="font-weight-bold text-h6">vs</div>
+              </div>
+            </div>
+
+            <!-- СОПЕРНИК -->
+            <div class="flex-grow-1 text-center text-sm-left">
+               <div class="text-caption text-medium-emphasis">Соперник</div>
+               <div class="text-h6 font-weight-bold">{{ store.nextGame.opponent_name }}</div>
+               <div class="text-body-2 text-medium-emphasis" v-if="store.nextGame.opponent_rating">
+                 Рейтинг: {{ store.nextGame.opponent_rating }}
+               </div>
+            </div>
+
+            <!-- ИНФО О МАТЧЕ -->
+            <div class="text-center text-sm-right">
+              <div class="mb-1"><v-icon start size="small">mdi-table-furniture</v-icon> Доска {{ store.nextGame.board }}</div>
+              <div class="mb-2" v-if="store.nextGame.game_date"><v-icon start size="small">mdi-calendar</v-icon> {{ store.nextGame.game_date }}</div>
+              <v-btn 
+                variant="outlined" 
+                color="primary" 
+                size="small"
+                append-icon="mdi-arrow-right"
+                @click="goToTournament(store.nextGame.tournament_id)"
+              >
+                В турнир
+              </v-btn>
+            </div>
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <!-- ======================================================= -->
       <!-- =========== СТАТУСНАЯ КАРТОЧКА ======================== -->
       <!-- ======================================================= -->
-      <v-card v-if="playerStatus.visible" class="mb-6 card-hover" :color="playerStatus.color" :variant="playerStatus.variant">
+      <!-- Показываем эту карточку, только если НЕТ следующей игры, чтобы не дублировать инфо -->
+      <v-card v-else-if="playerStatus.visible" class="mb-6 card-hover" :color="playerStatus.color" :variant="playerStatus.variant">
         <v-card-text>
           <div class="d-flex align-center">
             <v-icon class="mr-3" :icon="playerStatus.icon" size="24"></v-icon>
@@ -117,7 +182,7 @@
         </v-tabs>
       </v-sheet>
 
-	  <v-window v-model="tab" :touch="false" class="pa-1 mt-6">
+    <v-window v-model="tab" :touch="false" class="pa-1 mt-6">
         <!-- ВКЛАДКА "ОБЗОР" -->
         <v-window-item value="overview">
           <v-row>
