@@ -216,9 +216,10 @@ const getResultText = (game) => {
 
   if (result === '1') return 'Победа';
   if (result === '0') return 'Поражение';
+  if (result === '½') return 'Ничья';
   if (result === '+--') return 'Тех. победа';
   if (result === '--+') return 'Тех. поражение';
-  return 'Ничья';
+  return 'Не сыграна';
 };
 
 const ratingChange = computed(() => player.value?.rating_change || 0);
