@@ -40,25 +40,6 @@ const getDb = () => {
  * @param {Array} params - Массив параметров для подстановки в запрос.
  * @returns {Promise<Array<Object>>} Массив объектов, представляющих строки результата.
  */
-// async function query(sql, params = []) {
-//   const db = await getDb();
-  
-//   // 1. СНАЧАЛА дожидаемся выполнения асинхронной операции db.exec()
-//   const queryResultSets = await db.exec(sql, params, { rowMode: 'object' });
-
-//   // 2. ТОЛЬКО ПОТОМ работаем с полученным результатом
-//   const results = [];
-//   if (queryResultSets && queryResultSets.length > 0) {
-//     // db.exec может вернуть несколько наборов результатов, если в запросе было несколько команд.
-//     // Мы объединяем их все в один массив.
-//     for (const resultSet of queryResultSets) {
-//       if (resultSet.values) {
-//         results.push(...resultSet.values);
-//       }
-//     }
-//   }
-//   return results;
-// }
 async function query(sql, params = []) {
   const db = await getDb();
   
@@ -124,42 +105,37 @@ export const dbService = {
   `, [playerId, tournamentId]).then(res => res[0]),
 
   /** Получить все партии игрока в рамках одного турнира */
-  // getPlayerGamesInTournament: (playerId, tournamentId) => query(`
-  //   SELECT
-  //     g.id, g.round, g.board, g.result, g.pgn_moves,
-  //     CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as color,
-  //     CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
-  //     CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating
-  //   FROM games g
-  //   JOIN player_performances wpf ON wpf.id = g.white_performance_id
-  //   JOIN players wp ON wp.id = wpf.player_id
-  //   JOIN player_performances bpf ON bpf.id = g.black_performance_id
-  //   JOIN players bp ON bp.id = bpf.player_id
-  //   WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.tournament_id = ?
-  //   ORDER BY CAST(g.round AS INTEGER)
-  // `, [playerId, playerId, playerId, playerId, playerId, tournamentId]),
   getPlayerGamesInTournament: (playerId, tournamentId) => query(`
-    SELECT
-      g.id, g.round, g.board, g.result, g.pgn_moves,
-      -- Для bye цвет всегда будет 'w', так как игрок без соперника "играет" белыми
-      CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as color,
-      
-      -- Используем COALESCE, чтобы заменить NULL от LEFT JOIN на понятный текст
-      COALESCE(CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END, 'Пропуск тура') as opponent_name,
-      
-      CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating
-    FROM games g
-    -- JOIN для нашего игрока остается, так как он всегда есть
-    JOIN player_performances wpf ON wpf.id = g.white_performance_id
-    JOIN players wp ON wp.id = wpf.player_id
-    
-    -- Заменяем JOIN на LEFT JOIN для оппонента ===
-    LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
-    LEFT JOIN players bp ON bp.id = bpf.player_id
-    
-    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.tournament_id = ?
-    ORDER BY CAST(g.round AS INTEGER)
-  `, [playerId, playerId, playerId, playerId, playerId, tournamentId]),
+    SELECT * FROM (
+      -- Вариант 1: Игрок за БЕЛЫХ
+      SELECT
+        g.id, g.round, g.board, g.result, g.pgn_moves,
+        'w' as color,
+        -- Если черного нет (NULL), значит "Пропуск тура"
+        COALESCE(bp.canonical_name, 'Пропуск тура') as opponent_name,
+        bpf.rating_at_tournament as opponent_rating
+      FROM games g
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      LEFT JOIN players bp ON bp.id = bpf.player_id
+      WHERE wpf.player_id = ? AND g.tournament_id = ?
+
+      UNION ALL
+
+      -- Вариант 2: Игрок за ЧЕРНЫХ
+      SELECT
+        g.id, g.round, g.board, g.result, g.pgn_moves,
+        'b' as color,
+        wp.canonical_name as opponent_name,
+        wpf.rating_at_tournament as opponent_rating
+      FROM games g
+      JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      JOIN players wp ON wp.id = wpf.player_id
+      WHERE bpf.player_id = ? AND g.tournament_id = ?
+    )
+    ORDER BY CAST(round AS INTEGER) ASC
+  `, [playerId, tournamentId, playerId, tournamentId]),
 
   /** Получить детали одной конкретной партии по ее ID */
   getGameDetails: (gameId) => query(`
@@ -179,30 +155,6 @@ export const dbService = {
   `, [gameId]).then(res => res[0]),
 
   /** Получить все данные, необходимые для построения кросс-таблицы. */
-  // getDataForCrosstable: (tournamentId) => query(`
-  //   SELECT
-  //     p.id as player_id,
-  //     p.canonical_name as player_name,
-  //     perf.starting_rank,
-  //     g.round,
-  //     g.result,
-  //     g.board,
-  //     g.is_technical,
-  //    g.id as game_id,
-  //     CASE WHEN wpf.player_id = p.id THEN 'w' ELSE 'b' END as color,
-  //     CASE WHEN wpf.player_id = p.id THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
-  //     CASE WHEN wpf.player_id = p.id THEN bpf.player_id ELSE wpf.player_id END as opponent_player_id
-  //   FROM players p
-  //   JOIN player_performances perf ON p.id = perf.player_id
-  //   LEFT JOIN games g ON (
-  //     (g.white_performance_id = perf.id OR g.black_performance_id = perf.id) AND g.tournament_id = perf.tournament_id
-  //   )
-  //   LEFT JOIN player_performances wpf ON wpf.id = g.white_performance_id
-  //   LEFT JOIN players wp ON wp.id = wpf.player_id
-  //   LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
-  //   LEFT JOIN players bp ON bp.id = bpf.player_id
-  //   WHERE perf.tournament_id = ?
-  // `, [tournamentId]),
   getDataForCrosstable: (tournamentId) => query(`
     SELECT
       p.id as player_id,
@@ -296,7 +248,7 @@ export const dbService = {
     FROM players p
   `),
 
-  /** Получить всех игроков с агрегированной статистикой (оптимизированный запрос) */
+  /** Получить всех игроков с агрегированной статистикой */
   getAllPlayersWithStatsOptimized: () => query(`
     WITH LatestRating AS (
       -- Сначала находим последний рейтинг для каждого игрока с помощью оконной функции
@@ -329,15 +281,29 @@ export const dbService = {
   /** Получить статистику результативности против оппонентов разной силы */
   getPlayerOpponentStats: (playerId) => query(`
     WITH GameRatings AS (
+      -- Часть 1: Игрок играет белыми
       SELECT
         g.result,
-        CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as player_color,
+        'w' as player_color,
         wpf.rating_at_tournament as white_rating,
         bpf.rating_at_tournament as black_rating
       FROM games g
       JOIN player_performances wpf ON wpf.id = g.white_performance_id
       JOIN player_performances bpf ON bpf.id = g.black_performance_id
-      WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½')
+      WHERE wpf.player_id = ? AND g.result IN ('1-0', '0-1', '½-½')
+      
+      UNION ALL
+      
+      -- Часть 2: Игрок играет черными
+      SELECT
+        g.result,
+        'b' as player_color,
+        wpf.rating_at_tournament as white_rating,
+        bpf.rating_at_tournament as black_rating
+      FROM games g
+      JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      WHERE bpf.player_id = ? AND g.result IN ('1-0', '0-1', '½-½')
     )
     SELECT
       CASE
@@ -350,47 +316,70 @@ export const dbService = {
       SUM(CASE WHEN (player_color = 'w' AND result = '0-1') OR (player_color = 'b' AND result = '1-0') THEN 1 ELSE 0 END) as losses
     FROM GameRatings
     GROUP BY opponent_category
-  `, [playerId, playerId, playerId]),
+  `, [playerId, playerId]),
   
   /** Получить статистику по дебютам за всю карьеру */
   getPlayerOpeningStats: (playerId) => query(`
     SELECT
-      g.eco_code,
-      CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as player_color,
+      eco_code,
+      player_color,
       COUNT(*) as games_count,
-      SUM(CASE WHEN g.result = '½-½' THEN 1 ELSE 0 END) as draws,
+      SUM(CASE WHEN result = '½-½' THEN 1 ELSE 0 END) as draws,
       SUM(CASE 
-        WHEN (wpf.player_id = ? AND g.result = '1-0') OR (bpf.player_id = ? AND g.result = '0-1') THEN 1 
+        WHEN (player_color = 'w' AND result = '1-0') OR (player_color = 'b' AND result = '0-1') THEN 1 
         ELSE 0 
       END) as wins
-    FROM games g
-    JOIN player_performances wpf ON wpf.id = g.white_performance_id
-    JOIN player_performances bpf ON bpf.id = g.black_performance_id
-    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.eco_code IS NOT NULL
-    GROUP BY g.eco_code, player_color
-  `, [playerId, playerId, playerId, playerId, playerId]),
+    FROM (
+      -- Часть 1: Белые
+      SELECT g.eco_code, 'w' as player_color, g.result
+      FROM games g
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      WHERE wpf.player_id = ? AND g.eco_code IS NOT NULL
+      
+      UNION ALL
+      
+      -- Часть 2: Черные
+      SELECT g.eco_code, 'b' as player_color, g.result
+      FROM games g
+      JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      WHERE bpf.player_id = ? AND g.eco_code IS NOT NULL
+    ) as all_games
+    GROUP BY eco_code, player_color
+  `, [playerId, playerId]),
 
   /** Получить статистику H2H против всех соперников */
   getPlayerHeadToHead: (playerId) => query(`
     SELECT
-      CASE WHEN wpf.player_id = ? THEN bp.id ELSE wp.id END as opponent_id,
-      CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
+      opponent_id,
+      opponent_name,
       COUNT(*) as total_games,
-      SUM(CASE WHEN (wpf.player_id = ? AND g.result = '1-0') OR (bpf.player_id = ? AND g.result = '0-1') THEN 1 ELSE 0 END) as wins,
-      SUM(CASE WHEN g.result = '½-½' or g.result='1/2-1/2' THEN 1 ELSE 0 END) as draws,
-      SUM(CASE WHEN (wpf.player_id = ? AND g.result = '0-1') OR (bpf.player_id = ? AND g.result = '1-0') THEN 1 ELSE 0 END) as losses
-    FROM games g
-    JOIN player_performances wpf ON wpf.id = g.white_performance_id
-    JOIN players wp ON wp.id = wpf.player_id
-    JOIN player_performances bpf ON bpf.id = g.black_performance_id
-    JOIN players bp ON bp.id = bpf.player_id
-    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
+      SUM(CASE WHEN (player_color = 'w' AND result = '1-0') OR (player_color = 'b' AND result = '0-1') THEN 1 ELSE 0 END) as wins,
+      SUM(CASE WHEN result = '½-½' or result='1/2-1/2' THEN 1 ELSE 0 END) as draws,
+      SUM(CASE WHEN (player_color = 'w' AND result = '0-1') OR (player_color = 'b' AND result = '1-0') THEN 1 ELSE 0 END) as losses
+    FROM (
+      -- Часть 1: Белые (Соперник - черный)
+      SELECT 
+        bp.id as opponent_id, bp.canonical_name as opponent_name, 'w' as player_color, g.result
+      FROM games g
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      JOIN players bp ON bp.id = bpf.player_id
+      WHERE wpf.player_id = ? AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
+      
+      UNION ALL
+      
+      -- Часть 2: Черные (Соперник - белый)
+      SELECT 
+        wp.id as opponent_id, wp.canonical_name as opponent_name, 'b' as player_color, g.result
+      FROM games g
+      JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      JOIN players wp ON wp.id = wpf.player_id
+      WHERE bpf.player_id = ? AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
+    ) as combined
     GROUP BY opponent_id, opponent_name
     ORDER BY total_games DESC, opponent_name ASC
-  `, [
-    playerId, playerId, playerId, playerId, 
-    playerId, playerId, playerId, playerId
-  ]),
+  `, [playerId, playerId]),
 
   /**
    * Получить все игры игрока с детальной информацией для глубокой аналитики.
@@ -457,7 +446,8 @@ export const dbService = {
         COALESCE(bp.canonical_name, 'Пропуск тура') as opponent_name,
         bpf.player_id as opponent_id,
         bpf.rating_at_tournament as opponent_rating,
-        t.start_date
+        t.start_date,
+        CAST(g.round AS INTEGER) as round_num
       FROM games g
       JOIN tournaments t ON t.id = g.tournament_id
       JOIN player_performances wpf ON wpf.id = g.white_performance_id
@@ -481,7 +471,8 @@ export const dbService = {
         wp.canonical_name as opponent_name,
         wpf.player_id as opponent_id,
         wpf.rating_at_tournament as opponent_rating,
-        t.start_date
+        t.start_date,
+        CAST(g.round AS INTEGER) as round_num
       FROM games g
       JOIN tournaments t ON t.id = g.tournament_id
       JOIN player_performances bpf ON bpf.id = g.black_performance_id
@@ -490,7 +481,7 @@ export const dbService = {
       JOIN players wp ON wp.id = wpf.player_id
       WHERE bpf.player_id = ? AND (g.result IS NULL OR g.result = '')
     )
-    ORDER BY start_date DESC, CAST(round AS INTEGER) ASC
+    ORDER BY start_date DESC, round_num ASC
     LIMIT 1
   `, [playerId, playerId]).then(res => res[0]),
 
