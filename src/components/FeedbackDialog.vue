@@ -49,7 +49,7 @@
               <v-icon icon="mdi-send-circle" size="large" color="primary" class="mr-4"></v-icon>
             </template>
             <v-list-item-title class="font-weight-bold">Написать разработчику</v-list-item-title>
-            <v-list-item-subtitle>Личное сообщение в Telegram/VK</v-list-item-subtitle>
+            <v-list-item-subtitle>Личное сообщение в Telegram</v-list-item-subtitle>
             <template #append>
               <v-icon icon="mdi-open-in-new" size="small" color="medium-emphasis"></v-icon>
             </template>
