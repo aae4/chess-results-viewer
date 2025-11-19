@@ -101,14 +101,14 @@
               <v-sheet class="pa-3 border rounded text-center fill-height d-flex flex-column justify-center align-center">
                 <v-icon color="primary" class="mb-1">mdi-timer-outline</v-icon>
                 <div class="text-caption text-medium-emphasis">Контроль</div>
-                <div class="font-weight-bold text-caption">{{ store.activeTournament.time_control || 'Стандарт' }}</div>
+                <div class="font-weight-bold text-caption">{{ store.activeTournament.time_control || "60' + 30\"" }}</div>
               </v-sheet>
             </v-col>
             <v-col cols="6">
               <v-sheet class="pa-3 border rounded text-center fill-height d-flex flex-column justify-center align-center">
                 <v-icon color="primary" class="mb-1">mdi-map-marker</v-icon>
                 <div class="text-caption text-medium-emphasis">Город</div>
-                <div class="font-weight-bold">{{ store.activeTournament.city }}</div>
+                <div class="font-weight-bold">{{ store.activeTournament.city || "Москва" }}</div>
               </v-sheet>
             </v-col>
             <v-col cols="6">

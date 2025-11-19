@@ -8,7 +8,7 @@
     >
       <v-sheet class="pa-4 d-flex align-center" height="64" @click="goHome" style="cursor: pointer;">
         <v-icon color="primary" class="mr-3">mdi-chess-queen</v-icon>
-        <div class="app-title text-h6 font-weight-bold">Chess Viewer</div>
+        <div class="app-title text-h6 font-weight-bold">Шахматы на Мира</div>
       </v-sheet>
       <v-divider></v-divider>
       <v-list nav>

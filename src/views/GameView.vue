@@ -78,7 +78,7 @@
               <v-spacer></v-spacer>
               <v-btn @click="flipBoard" variant="text" icon="mdi-rotate-3d-variant" title="Перевернуть доску"></v-btn>
               <v-btn :href="lichessUrl" target="_blank" prepend-icon="mdi-open-in-new" variant="text">
-                Анализ
+                Lichess
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -109,6 +109,7 @@
           <v-toolbar flat density="compact" color="transparent">
             
             <v-btn @click="flipBoard" variant="text" icon="mdi-rotate-3d-variant"></v-btn>
+            <v-btn :href="lichessUrl" target="_blank" prepend-icon="mdi-open-in-new" variant="text">lichess</v-btn>
             <v-spacer></v-spacer>
             <v-btn-group variant="text" density="comfortable">
               <!-- <v-btn @click="toStart" icon="mdi-skip-previous"></v-btn> -->
