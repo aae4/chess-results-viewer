@@ -7,7 +7,6 @@
       app
     >
       <v-sheet class="pa-4 d-flex align-center" height="64" @click="goHome" style="cursor: pointer;">
-        <!-- <v-icon color="primary" class="mr-3">mdi-chess-queen</v-icon> -->
         <v-avatar class="mr-3" size="32" rounded="0">
           <v-img src="/chess-results-viewer/android-chrome-192x192.png" alt="Логотип"></v-img>
         </v-avatar>
@@ -36,12 +35,21 @@
           :to="{ name: 'PlayerList' }"
           rounded="lg"
         ></v-list-item>
+        
         <v-divider class="my-2"></v-divider>
+        
         <v-list-item
           prepend-icon="mdi-information-outline"
           title="О клубе"
           value="about"
           :to="{ name: 'About' }"
+          rounded="lg"
+        ></v-list-item>
+
+        <v-list-item
+          prepend-icon="mdi-message-alert-outline"
+          title="Нашли ошибку?"
+          @click="feedbackDialog = true"
           rounded="lg"
         ></v-list-item>
       </v-list>
@@ -53,9 +61,18 @@
       </v-btn>
       <v-app-bar-nav-icon v-if="display.smAndDown.value" @click="drawer = !drawer"></v-app-bar-nav-icon>
       
-      <v-toolbar-title class="font-weight-medium text-subtitle-1">
-        {{ currentTitle }}
-        <v-chip color="amber" size="x-small" variant="flat" class="ml-2 font-weight-bold">BETA</v-chip>
+      <v-toolbar-title class="font-weight-medium text-subtitle-1 d-flex align-center">
+        <span class="text-truncate">{{ currentTitle }}</span>
+        <v-chip 
+          color="amber" 
+          size="x-small" 
+          variant="flat" 
+          class="ml-2 font-weight-bold cursor-pointer hover-scale"
+          @click="feedbackDialog = true"
+          title="Сообщить о проблеме"
+        >
+          BETA
+        </v-chip>
       </v-toolbar-title>
       
       <v-spacer></v-spacer>
@@ -74,6 +91,9 @@
         </router-view>
       </v-container>
     </v-main>
+
+    <FeedbackDialog v-model="feedbackDialog" />
+    
   </v-app>
 </template>
 
@@ -82,7 +102,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useTheme, useDisplay } from 'vuetify';
 import { useRoute, useRouter } from 'vue-router';
 import { useTournamentStore } from '@/stores/tournamentStore';
-import AppFooter from '@/components/AppFooter.vue';
+import FeedbackDialog from '@/components/FeedbackDialog.vue';
 
 const theme = useTheme();
 const display = useDisplay();
@@ -92,6 +112,7 @@ const store = useTournamentStore();
 
 const drawer = ref(display.mdAndUp.value);
 const isDark = ref(theme.global.current.value.dark);
+const feedbackDialog = ref(false); // Состояние диалога
 
 onMounted(() => {
   store.fetchCurrentTournament();
@@ -115,38 +136,29 @@ const showBackButton = computed(() => {
 });
 
 
-// Динамический заголовок в App Bar
 const currentTitle = computed(() => {
   switch (route.name) {
-    case 'TournamentsList':
-      return 'Все турниры';
+    case 'TournamentsList': return 'Все турниры';
     case 'Standings':
     case 'Rounds':
     case 'Participants':
     case 'Crosstable':
-    case 'Statistics':
-      return store.activeTournament?.name || 'Турнир';
-    case 'Player':
-      return store.activePlayer?.canonical_name || 'Профиль игрока';
-    case 'Game':
-      return `Партия: ${store.activeGame?.white_name || ''} - ${store.activeGame?.black_name || ''}`;
-    case 'GlobalPlayer': 
-      return 'Профиль игрока';
-    default:
-      return 'Шахматы на Проспекте Мира, 43';
+    case 'Statistics': return store.activeTournament?.name || 'Турнир';
+    case 'Player': return store.activePlayer?.canonical_name || 'Профиль игрока';
+    case 'Game': return `Партия: ${store.activeGame?.white_name || ''} - ${store.activeGame?.black_name || ''}`;
+    case 'GlobalPlayer': return 'Профиль игрока';
+    default: return 'Шахматы на Проспекте Мира, 43';
   }
 });
 </script>
 
 <style>
-/* Глобальные стили для улучшения внешнего вида */
-.app-container {
-  font-family: 'Inter', sans-serif;
-}
-.v-table__wrapper > table {
-  border-spacing: 0 4px; /* Добавляем "воздух" между строками таблицы */
-}
-.v-data-table .v-table__wrapper > table > tbody > tr:not(:last-child) > td {
-  border-bottom: none !important;
-}
+.app-container { font-family: 'Inter', sans-serif; }
+.v-table__wrapper > table { border-spacing: 0 4px; }
+.v-data-table .v-table__wrapper > table > tbody > tr:not(:last-child) > td { border-bottom: none !important; }
+
+/* ДОБАВЛЕНО: Стили курсора для чипа */
+.cursor-pointer { cursor: pointer; }
+.hover-scale { transition: transform 0.1s; }
+.hover-scale:hover { transform: scale(1.1); }
 </style>
