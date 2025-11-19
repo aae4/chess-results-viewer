@@ -9,7 +9,8 @@ export const usePlayerStore = defineStore('player', () => {
   const playerProfile = ref(null);
   const playerCareer = ref([]);
   const nextGame = ref(null);
-  const isLoading = ref(false);
+  const isLoading = ref(false); // Глобальная загрузка профиля
+  const isLoadingNextGame = ref(false); // Локальная загрузка следующей игры
   const error = ref(null);
 
   // === СОСТОЯНИЕ ДЛЯ СПИСКА ВСЕХ ИГРОКОВ ===
@@ -22,7 +23,7 @@ export const usePlayerStore = defineStore('player', () => {
   const openingStats = ref(null);
   const h2hStats = ref(null);
   const playerGamesAnalytics = ref([]);
-  const isLoadingAnalytics = ref(false); // Отдельный флаг загрузки
+  const isLoadingAnalytics = ref(false); 
 
   // --- GETTERS (COMPUTED) ---
 
@@ -77,7 +78,7 @@ export const usePlayerStore = defineStore('player', () => {
     };
   });
 
-  /** Проверяет участие игрока в "текущем" турнире и возвращает данные об участии */
+  /** Проверяет участие игрока в "текущем" турнире */
   const participationInCurrentTournament = computed(() => {
     const tournamentStore = useTournamentStore();
     const current = tournamentStore.currentTournament;
@@ -161,7 +162,6 @@ export const usePlayerStore = defineStore('player', () => {
       }
     });
 
-    // Рассчитываем итоговые проценты и очки для каждого ключа
     ['white', 'black', 'total'].forEach(key => {
       const s = stats[key];
       s.total = s.w + s.d + s.l;
@@ -174,7 +174,7 @@ export const usePlayerStore = defineStore('player', () => {
     return stats;
   });
 
-  /** Статистика по ходу турнира (начало/середина/конец) */
+  /** Статистика по ходу турнира */
   const performanceByRounds = computed(() => {
     const stages = {
       opening: { score: 0, total: 0 },
@@ -227,6 +227,11 @@ export const usePlayerStore = defineStore('player', () => {
   async function fetchPlayerData(playerId) {
     isLoading.value = true;
     error.value = null;
+    nextGame.value = null; // Сбрасываем старое значение сразу
+    
+    // Запускаем поиск следующей игры параллельно, не блокируя основной интерфейс
+    fetchNextGame(playerId);
+
     try {
       const [profileData, careerData] = await Promise.all([
         dbService.getPlayerGlobalProfile(playerId),
@@ -235,8 +240,6 @@ export const usePlayerStore = defineStore('player', () => {
       
       playerProfile.value = profileData;
       playerCareer.value = careerData;
-
-      await fetchNextGame(playerId);
 
     } catch (e) {
       error.value = e.message;
@@ -247,13 +250,15 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   async function fetchNextGame(playerId) {
+    isLoadingNextGame.value = true; // Включаем локальный спиннер
     try {
-      // Загружаем следующую игру (без результата)
       const game = await dbService.getPlayerNextGame(playerId);
       nextGame.value = game || null;
     } catch (e) {
       console.error("Ошибка при загрузке следующей игры:", e);
       nextGame.value = null;
+    } finally {
+      isLoadingNextGame.value = false; // Выключаем локальный спиннер
     }
   }
   
@@ -265,17 +270,17 @@ export const usePlayerStore = defineStore('player', () => {
       const [oppStats, openStats, games] = await Promise.all([
         dbService.getPlayerOpponentStats(playerId),
         dbService.getPlayerOpeningStats(playerId),
-        dbService.getPlayerGamesForAnalytics(playerId), // <-- ЗАГРУЖАЕМ НОВЫЕ ДАННЫЕ
+        dbService.getPlayerGamesForAnalytics(playerId), 
       ]);
       opponentStats.value = oppStats;
       openingStats.value = openStats;
-      playerGamesAnalytics.value = games; // <-- СОХРАНЯЕМ
+      playerGamesAnalytics.value = games; 
     } catch (e) { console.error("Ошибка при загрузке аналитики:", e); }
     finally { isLoadingAnalytics.value = false; }
   }
 
   async function fetchPlayerH2H(playerId) {
-    if (h2hStats.value) return; // Загружаем только один раз
+    if (h2hStats.value) return; 
     isLoadingAnalytics.value = true;
     try {
       h2hStats.value = await dbService.getPlayerHeadToHead(playerId);
@@ -287,6 +292,7 @@ export const usePlayerStore = defineStore('player', () => {
     playerProfile.value = null;
     playerCareer.value = [];
     nextGame.value = null;
+    isLoadingNextGame.value = false;
     opponentStats.value = null;
     openingStats.value = null;
     h2hStats.value = null;
@@ -312,6 +318,7 @@ export const usePlayerStore = defineStore('player', () => {
     playerCareer,
     nextGame,
     isLoading,
+    isLoadingNextGame, // Экспортируем новый флаг
     error,
     careerStats,
     ratingHistory,

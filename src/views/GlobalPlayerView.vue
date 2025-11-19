@@ -79,9 +79,22 @@
       </v-card>
 
       <!-- ======================================================= -->
+      <!-- =========== SKELETON ДЛЯ СЛЕДУЮЩЕЙ ИГРЫ =============== -->
+      <!-- ======================================================= -->
+      <v-card v-if="store.isLoadingNextGame" class="mb-6" border>
+        <v-card-item>
+          <v-skeleton-loader type="heading" width="200"></v-skeleton-loader>
+        </v-card-item>
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-skeleton-loader type="list-item-avatar-two-line"></v-skeleton-loader>
+        </v-card-text>
+      </v-card>
+
+      <!-- ======================================================= -->
       <!-- =========== СЛЕДУЮЩАЯ ИГРА ============================ -->
       <!-- ======================================================= -->
-      <v-card v-if="store.nextGame" class="mb-6" elevation="3" border>
+      <v-card v-else-if="store.nextGame" class="mb-6" elevation="3" border>
         <v-card-item>
           <template #prepend>
             <v-icon color="primary" icon="mdi-chess-queen" size="large"></v-icon>

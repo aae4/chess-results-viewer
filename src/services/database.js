@@ -396,23 +396,46 @@ export const dbService = {
    * Получить все игры игрока с детальной информацией для глубокой аналитики.
    */
   getPlayerGamesForAnalytics: (playerId) => query(`
+    -- Часть 1: Игрок играл БЕЛЫМИ
     SELECT
       g.id as game_id,
       t.id as tournament_id,
       g.result,
       CAST(g.round AS INTEGER) as round,
       t.rounds_count,
-      CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as player_color,
-      CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating,
-      CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name
+      'w' as player_color,
+      bpf.rating_at_tournament as opponent_rating, -- Соперник - черный
+      bp.canonical_name as opponent_name         -- Имя соперника
     FROM games g
     JOIN player_performances wpf ON wpf.id = g.white_performance_id
-    JOIN players wp ON wp.id = wpf.player_id
+    JOIN tournaments t ON t.id = g.tournament_id
+    -- Нам нужны данные только черного (соперника), данные белого (наши) фильтруем по ID
     JOIN player_performances bpf ON bpf.id = g.black_performance_id
     JOIN players bp ON bp.id = bpf.player_id
+    WHERE wpf.player_id = ? 
+      AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
+
+    UNION ALL
+
+    -- Часть 2: Игрок играл ЧЕРНЫМИ
+    SELECT
+      g.id as game_id,
+      t.id as tournament_id,
+      g.result,
+      CAST(g.round AS INTEGER) as round,
+      t.rounds_count,
+      'b' as player_color,
+      wpf.rating_at_tournament as opponent_rating, -- Соперник - белый
+      wp.canonical_name as opponent_name         -- Имя соперника
+    FROM games g
+    JOIN player_performances bpf ON bpf.id = g.black_performance_id
     JOIN tournaments t ON t.id = g.tournament_id
-    WHERE (wpf.player_id = ? OR bpf.player_id = ?) AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
-  `, [playerId, playerId, playerId, playerId, playerId]),
+    -- Нам нужны данные только белого (соперника)
+    JOIN player_performances wpf ON wpf.id = g.white_performance_id
+    JOIN players wp ON wp.id = wpf.player_id
+    WHERE bpf.player_id = ?
+      AND g.result IN ('1-0', '0-1', '½-½', '1/2-1/2')
+  `, [playerId, playerId]),
 
   /** 
    * Находит следующую игру для конкретного игрока.
@@ -420,34 +443,56 @@ export const dbService = {
    * но пары уже сформированы.
    */
   getPlayerNextGame: (playerId) => query(`
-    SELECT
-      g.id as game_id,
-      t.id as tournament_id,
-      t.name as tournament_name,
-      t.time_control,
-      g.round,
-      g.board,
-      g.game_date,
-      -- Цвет фигур относительно запрашиваемого игрока
-      CASE WHEN wpf.player_id = ? THEN 'w' ELSE 'b' END as color,
-      -- Имя соперника (или 'Пропуск тура')
-      COALESCE(CASE WHEN wpf.player_id = ? THEN bp.canonical_name ELSE wp.canonical_name END, 'Пропуск тура') as opponent_name,
-      -- ID соперника (может быть NULL для bye)
-      CASE WHEN wpf.player_id = ? THEN bpf.player_id ELSE wpf.player_id END as opponent_id,
-      -- Рейтинг соперника
-      CASE WHEN wpf.player_id = ? THEN bpf.rating_at_tournament ELSE wpf.rating_at_tournament END as opponent_rating
-    FROM games g
-    JOIN tournaments t ON t.id = g.tournament_id
-    JOIN player_performances wpf ON wpf.id = g.white_performance_id
-    JOIN players wp ON wp.id = wpf.player_id
-    LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
-    LEFT JOIN players bp ON bp.id = bpf.player_id
-    WHERE
-      (wpf.player_id = ? OR bpf.player_id = ?) -- Игрок либо белый, либо черный
-      AND (g.result IS NULL OR g.result = '')   -- Игра не завершена
-    ORDER BY t.start_date DESC, CAST(g.round AS INTEGER) ASC
+    SELECT * FROM (
+      -- Вариант 1: Я за белых
+      SELECT
+        g.id as game_id,
+        t.id as tournament_id,
+        t.name as tournament_name,
+        t.time_control,
+        g.round,
+        g.board,
+        g.game_date,
+        'w' as color,
+        COALESCE(bp.canonical_name, 'Пропуск тура') as opponent_name,
+        bpf.player_id as opponent_id,
+        bpf.rating_at_tournament as opponent_rating,
+        t.start_date
+      FROM games g
+      JOIN tournaments t ON t.id = g.tournament_id
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      -- Соперник (черные) может отсутствовать (LEFT JOIN)
+      LEFT JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      LEFT JOIN players bp ON bp.id = bpf.player_id
+      WHERE wpf.player_id = ? AND (g.result IS NULL OR g.result = '')
+
+      UNION ALL
+
+      -- Вариант 2: Я за черных
+      SELECT
+        g.id as game_id,
+        t.id as tournament_id,
+        t.name as tournament_name,
+        t.time_control,
+        g.round,
+        g.board,
+        g.game_date,
+        'b' as color,
+        wp.canonical_name as opponent_name,
+        wpf.player_id as opponent_id,
+        wpf.rating_at_tournament as opponent_rating,
+        t.start_date
+      FROM games g
+      JOIN tournaments t ON t.id = g.tournament_id
+      JOIN player_performances bpf ON bpf.id = g.black_performance_id
+      -- Соперник (белые) всегда есть, если я черный
+      JOIN player_performances wpf ON wpf.id = g.white_performance_id
+      JOIN players wp ON wp.id = wpf.player_id
+      WHERE bpf.player_id = ? AND (g.result IS NULL OR g.result = '')
+    )
+    ORDER BY start_date DESC, CAST(round AS INTEGER) ASC
     LIMIT 1
-  `, [playerId, playerId, playerId, playerId, playerId, playerId]).then(res => res[0]),
+  `, [playerId, playerId]).then(res => res[0]),
 
   /** 
    * Находит самый релевантный "текущий" турнир по трехуровневой логике.
