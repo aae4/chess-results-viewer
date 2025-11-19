@@ -188,7 +188,7 @@ export const dbService = {
   //     g.result,
   //     g.board,
   //     g.is_technical,
-  //     g.id as game_id,
+  //    g.id as game_id,
   //     CASE WHEN wpf.player_id = p.id THEN 'w' ELSE 'b' END as color,
   //     CASE WHEN wpf.player_id = p.id THEN bp.canonical_name ELSE wp.canonical_name END as opponent_name,
   //     CASE WHEN wpf.player_id = p.id THEN bpf.player_id ELSE wpf.player_id END as opponent_player_id
@@ -512,8 +512,12 @@ export const dbService = {
       SELECT
         g.id,
         g.result,
+        g.board,
+        g.round,
         white_player.canonical_name AS white_player_name,
-        black_player.canonical_name AS black_player_name
+        black_player.canonical_name AS black_player_name,
+        pp_white.rating_at_tournament as white_rating,
+        pp_black.rating_at_tournament as black_rating
       FROM games AS g
       JOIN player_performances AS pp_white ON g.white_performance_id = pp_white.id
       JOIN players AS white_player ON pp_white.player_id = white_player.id
@@ -531,8 +535,10 @@ export const dbService = {
       // Трансформируем плоский результат SQL в удобную вложенную структуру для фронтенда
       id: game.id,
       result: game.result,
-      white_player: { name: game.white_player_name },
-      black_player: { name: game.black_player_name }
+      round: game.round,
+      board: game.board,
+      white_player: { name: game.white_player_name, rating: game.white_rating },
+      black_player: { name: game.black_player_name, rating: game.black_rating }
     })));
   },
 
@@ -578,8 +584,8 @@ export const dbService = {
     
     // Шаг 3: Если дата последней игры уже в прошлом, значит, анонса пока нет.
     return {
-      name: 'Следующий тур',
-      date: 'Информация скоро появится',
+      name: 'Турнир завершен',
+      date: '',
       time: ''
     };
   },

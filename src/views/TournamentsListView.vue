@@ -47,7 +47,7 @@
       <v-card 
         v-if="currentTournamentForHero" 
         class="mb-8 hero-card"
-        :to="{ name: 'Standings', params: { tournamentId: currentTournamentForHero.id } }"
+        :to="{ name: 'Overview', params: { tournamentId: currentTournamentForHero.id } }"
         :variant="currentTournamentInfo.variant"
         :color="currentTournamentInfo.color"
       >
@@ -70,7 +70,7 @@
         <v-list-item
           v-for="tournament in paginatedTournaments"
           :key="tournament.id"
-          :to="{ name: 'Standings', params: { tournamentId: tournament.id } }"
+          :to="{ name: 'Overview', params: { tournamentId: tournament.id } }"
           class="list-item-card mb-2"
           border
           rounded

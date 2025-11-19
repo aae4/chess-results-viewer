@@ -33,11 +33,12 @@ const routes = [
     component: () => import('@/views/TournamentDashboard.vue'),
     props: true,
 
-    redirect: to => ({ name: 'Standings', params: { tournamentId: to.params.tournamentId } }),
+    redirect: to => ({ name: 'Overview', params: { tournamentId: to.params.tournamentId } }),
+    
     children: [
+      { path: 'overview', name: 'Overview', component: () => import('@/views/TournamentOverview.vue') },
       { path: 'standings', name: 'Standings', component: () => import('@/views/StandingsView.vue') },
       { path: 'rounds', name: 'Rounds', component: () => import('@/views/RoundsView.vue') },
-      { path: 'participants', name: 'Participants', component: () => import('@/views/ParticipantsView.vue') },
       { path: 'crosstable', name: 'Crosstable', component: () => import('@/views/CrosstableView.vue') },
       { path: 'statistics', name: 'Statistics', component: () => import('@/views/StatisticsView.vue') },
       { path: 'player/:playerId', name: 'Player', component: () => import('@/views/PlayerView.vue'), props: true },

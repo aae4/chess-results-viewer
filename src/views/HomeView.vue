@@ -23,7 +23,7 @@
           Центр шахматной жизни Москвы
         </p>
         <v-card v-if="currentTournament"
-          :to="{ name: 'Standings', params: { tournamentId: currentTournament.id } }"
+          :to="{ name: 'Overview', params: { tournamentId: currentTournament.id } }"
           class="d-inline-block text-left mx-auto sub-hero-card elevation-8">
           <v-card-item>
             <template #prepend>

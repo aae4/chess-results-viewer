@@ -25,7 +25,6 @@
       <v-tooltip location="bottom">
         <template v-slot:activator="{ props }">
           <div v-bind="props">
-            <!-- Кнопка для десктопа (с текстом) -->
             <v-btn
               :href="chessResultsUrl"
               target="_blank"
@@ -36,7 +35,6 @@
             >
               Chess-Results
             </v-btn>
-            <!-- Кнопка для мобильных (только иконка) -->
             <v-btn
               :href="chessResultsUrl"
               target="_blank"
@@ -99,17 +97,16 @@ const chessResultsUrl = computed(() => {
 
 // Проверяем, является ли текущая страница одной из вкладок турнира
 const isTournamentTabPage = computed(() => {
-  return ['Standings', 'Rounds', 'Participants', 'Crosstable', 'Statistics'].includes(route.name);
+  return ['Overview', 'Standings', 'Rounds', 'Crosstable', 'Statistics'].includes(route.name);
 });
 
-// Скрываем навигацию, если мы на странице игрока (или любой другой, не из списка выше)
 const isPlayerOrGamePage = computed(() => !isTournamentTabPage.value);
 
 const tabs = computed(() => [
-  { text: 'Итоги', value: 'Standings', icon: 'mdi-podium', to: { name: 'Standings', params: { tournamentId: props.tournamentId } } },
-  { text: 'Туры', value: 'Rounds', icon: 'mdi-tournament', to: { name: 'Rounds', params: { tournamentId: props.tournamentId } } },
-  { text: 'Участники', value: 'Participants', icon: 'mdi-account-group-outline', to: { name: 'Participants', params: { tournamentId: props.tournamentId } } },
-  { text: 'Таблица', value: 'Crosstable', icon: 'mdi-table-large', to: { name: 'Crosstable', params: { tournamentId: props.tournamentId } } },
+  { text: 'Обзор', value: 'Overview', icon: 'mdi-view-dashboard-outline', to: { name: 'Overview', params: { tournamentId: props.tournamentId } } },
+  { text: 'Таблица', value: 'Standings', icon: 'mdi-format-list-numbered', to: { name: 'Standings', params: { tournamentId: props.tournamentId } } },
+  { text: 'Туры', value: 'Rounds', icon: 'mdi-chess-pawn', to: { name: 'Rounds', params: { tournamentId: props.tournamentId } } },
+  { text: 'Сетка', value: 'Crosstable', icon: 'mdi-table-large', to: { name: 'Crosstable', params: { tournamentId: props.tournamentId } } },
   { text: 'Статистика', value: 'Statistics', icon: 'mdi-chart-bar', to: { name: 'Statistics', params: { tournamentId: props.tournamentId } } },
 ]);
 
@@ -125,7 +122,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Добавляем отступ снизу для контента, чтобы его не перекрывала нижняя навигация */
 .v-bottom-navigation ~ .v-main {
   padding-bottom: 64px;
 }

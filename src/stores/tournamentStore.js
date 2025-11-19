@@ -44,7 +44,7 @@ export const useTournamentStore = defineStore('tournaments', () => {
    * Загружает все необходимые данные для дашборда на главной странице.
    */
   async function fetchHomepageDashboardData() {
-    if (recentGames.value.length > 0) return; // Не перезагружаем, если данные уже есть
+    if (recentGames.value.length > 0) return; 
 
     isLoadingHomepage.value = true;
     error.value = null;
@@ -53,7 +53,6 @@ export const useTournamentStore = defineStore('tournaments', () => {
       const tournament = await dbService.getCurrentTournament(today);
 
       if (!tournament) {
-        // Если нет активного турнира, просто выходим
         currentTournament.value = null;
         return;
       }
@@ -61,8 +60,8 @@ export const useTournamentStore = defineStore('tournaments', () => {
 
       const [standingsData, gamesData, roundData] = await Promise.all([
         dbService.getTournamentStandings(tournament.id),
-        dbService.getRecentGames(tournament.id, 5), // Запрашиваем 5 последних партий
-        dbService.getNextRoundInfo(tournament.id)   // Запрашиваем инфо о след. раунде
+        dbService.getRecentGames(tournament.id, 5), 
+        dbService.getNextRoundInfo(tournament.id)   
       ]);
 
       currentTournamentStandings.value = standingsData;
@@ -93,9 +92,12 @@ export const useTournamentStore = defineStore('tournaments', () => {
     
     isLoadingDetails.value = true;
     error.value = null;
+    
+    // Очищаем данные, чтобы не показывать данные предыдущего турнира
+    clearActiveData();
+
     try {
-      // getEcoDatabase() теперь вызывается как сервис
-      const [details, standingsData, gamesData, participantsData, crosstableRawData, statisticsRawData, ecoData] = await Promise.all([
+      const [details, standingsData, gamesData, participantsData, crosstableRawData, statisticsRawData, ecoData, recent, nextRound] = await Promise.all([
         dbService.getTournamentDetails(id),
         dbService.getTournamentStandings(id),
         dbService.getTournamentGames(id),
@@ -103,6 +105,8 @@ export const useTournamentStore = defineStore('tournaments', () => {
         dbService.getDataForCrosstable(id),
         dbService.getGamesForStatistics(id),
         getEcoDatabase(),
+        dbService.getRecentGames(id, 5),
+        dbService.getNextRoundInfo(id)
       ]);
       
       activeTournament.value = details;
@@ -112,6 +116,13 @@ export const useTournamentStore = defineStore('tournaments', () => {
       crosstableData.value = crosstableRawData;
       statisticsData.value = statisticsRawData;
       ecoDatabase.value = ecoData;
+      recentGames.value = recent;
+      nextRoundInfo.value = nextRound;
+      
+      if (gamesData.length > 0) {
+        const maxRound = Math.max(...gamesData.map(g => parseInt(g.round) || 0));
+        activeRound.value = maxRound > 0 ? maxRound : 1;
+      }
 
     } catch (e) { error.value = e.message; } 
     finally { isLoadingDetails.value = false; }
@@ -141,10 +152,10 @@ export const useTournamentStore = defineStore('tournaments', () => {
   }
 
   async function fetchCurrentTournament() {
-    if (currentTournament.value) return; // Не загружаем повторно
+    if (currentTournament.value) return; 
     isLoadingCurrent.value = true;
     try {
-      const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+      const today = new Date().toISOString().slice(0, 10); 
       currentTournament.value = await dbService.getCurrentTournament(today);
     } catch (e) {
       console.error("Ошибка при загрузке текущего турнира:", e);
@@ -153,10 +164,8 @@ export const useTournamentStore = defineStore('tournaments', () => {
     }
   }
 
-
-  /** Загружает информацию о последнем завершенном турнире и его призерах */
   async function fetchHomepageData() {
-    if (latestFinishedTournament.value) return; // Загружаем один раз
+    if (latestFinishedTournament.value) return; 
     try {
       const today = new Date().toISOString().slice(0, 10);
       const latest = await dbService.getLatestFinishedTournament(today);
@@ -169,7 +178,6 @@ export const useTournamentStore = defineStore('tournaments', () => {
     }
   }
 
-  /** Загружает информацию о последнем завершенном турнире и его призерах (для страницы "О клубе" или архива) */
   async function fetchHallOfFameData() {
     if (latestFinishedTournament.value) return; 
     try {
@@ -194,7 +202,9 @@ export const useTournamentStore = defineStore('tournaments', () => {
     activeGame.value = null;
     crosstableData.value = [];
     statisticsData.value = [];
-    activeRound.value = 1; 
+    activeRound.value = 1;
+    recentGames.value = [];
+    nextRoundInfo.value = null;
   }
 
   return {
