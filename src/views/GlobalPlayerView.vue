@@ -167,12 +167,6 @@
       </v-card>
 
       <!-- Система вкладок -->
-<!--       <v-tabs v-model="tab" color="primary" class="mb-6" :align-tabs="smAndDown ? 'center' : 'start'" show-arrows>
-        <v-tab value="overview"><v-icon start>mdi-chart-line</v-icon>Обзор</v-tab>
-        <v-tab value="analytics"><v-icon start>mdi-magnify-scan</v-icon>Статистика</v-tab>
-        <v-tab value="h2h"><v-icon start>mdi-sword-cross</v-icon>Соперники</v-tab>
-        <v-tab value="history"><v-icon start>mdi-history</v-icon>История</v-tab>
-      </v-tabs> -->
       <v-sheet class="sticky-tabs" elevation="2">
         <v-tabs v-model="tab" color="primary" :align-tabs="smAndDown ? 'center' : 'start'" show-arrows>
           <v-tab value="overview"><v-icon start>mdi-chart-line</v-icon>Обзор</v-tab>
@@ -230,14 +224,18 @@
                 <v-divider></v-divider>
                 <v-list class="py-0" lines="two">
                   <v-list-item>
-                    <template #prepend><v-icon size="32" class="mr-4">mdi-circle-outline</v-icon></template>
+                    <template #prepend>
+                      <div class="color-indicator-large bg-white border mr-4"></div>
+                    </template>
                     <v-list-item-title class="font-weight-bold">Белыми: {{ store.careerPerformanceStats.white.score }} / {{ store.careerPerformanceStats.white.total }}</v-list-item-title>
                     <v-list-item-subtitle>{{ store.careerPerformanceStats.white.winPercent }}% побед</v-list-item-subtitle>
                     <template #append><div class="d-flex ga-1"><v-chip color="success" size="small" label>+{{ store.careerPerformanceStats.white.w }}</v-chip><v-chip size="small" label>={{ store.careerPerformanceStats.white.d }}</v-chip><v-chip color="error" size="small" label>-{{ store.careerPerformanceStats.white.l }}</v-chip></div></template>
                   </v-list-item>
                   <v-divider></v-divider>
                   <v-list-item>
-                    <template #prepend><v-icon size="32" class="mr-4">mdi-circle</v-icon></template>
+                    <template #prepend>
+                      <div class="color-indicator-large bg-black border mr-4"></div>
+                    </template>
                     <v-list-item-title class="font-weight-bold">Черными: {{ store.careerPerformanceStats.black.score }} / {{ store.careerPerformanceStats.black.total }}</v-list-item-title>
                     <v-list-item-subtitle>{{ store.careerPerformanceStats.black.winPercent }}% побед</v-list-item-subtitle>
                     <template #append><div class="d-flex ga-1"><v-chip color="success" size="small" label>+{{ store.careerPerformanceStats.black.w }}</v-chip><v-chip size="small" label>={{ store.careerPerformanceStats.black.d }}</v-chip><v-chip color="error" size="small" label>-{{ store.careerPerformanceStats.black.l }}</v-chip></div></template>
@@ -247,7 +245,16 @@
               <v-card class="card-hover">
                 <v-card-item>
                   <v-card-title>Дебютный репертуар</v-card-title>
-                  <template #append><v-tabs v-model="openingTab" density="compact" color="primary"><v-tab value="white" min-width="50"><v-icon>mdi-circle-outline</v-icon></v-tab><v-tab value="black" min-width="50"><v-icon>mdi-circle</v-icon></v-tab></v-tabs></template>
+                  <template #append>
+                    <v-tabs v-model="openingTab" density="compact" color="primary">
+                      <v-tab value="white" min-width="50">
+                        <div class="color-indicator-small bg-white border"></div>
+                      </v-tab>
+                      <v-tab value="black" min-width="50">
+                        <div class="color-indicator-small bg-black border"></div>
+                      </v-tab>
+                    </v-tabs>
+                  </template>
                 </v-card-item>
                 <v-window v-model="openingTab">
                   <v-window-item value="white">
@@ -645,16 +652,28 @@ const getRatingChangeColor = (change) => {
   transform: translateY(-4px);
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
-/* ИЗМЕНЕНИЕ: Добавляем класс для переноса длинных названий турниров */
+
 .wrap-text {
   white-space: normal;
 }
 
 .sticky-tabs {
   position: sticky;
-  /* 64px - это стандартная высота v-app-bar. */
-  /* Если она у вас другая, измените это значение. */
   top: 64px;
-  z-index: 100; /* Должно быть выше контента, но ниже v-dialog и т.п. */
+  z-index: 100; 
+}
+
+.color-indicator-large {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
+}
+
+.color-indicator-small {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
 }
 </style>
