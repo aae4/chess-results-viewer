@@ -7,7 +7,10 @@
       app
     >
       <v-sheet class="pa-4 d-flex align-center" height="64" @click="goHome" style="cursor: pointer;">
-        <v-icon color="primary" class="mr-3">mdi-chess-queen</v-icon>
+        <!-- <v-icon color="primary" class="mr-3">mdi-chess-queen</v-icon> -->
+        <v-avatar class="mr-3" size="32" rounded="0">
+          <v-img src="/chess-results-viewer/android-chrome-192x192.png" alt="Логотип"></v-img>
+        </v-avatar>
         <div class="app-title text-h6 font-weight-bold">Шахматы на Мира</div>
       </v-sheet>
       <v-divider></v-divider>
@@ -52,6 +55,7 @@
       
       <v-toolbar-title class="font-weight-medium text-subtitle-1">
         {{ currentTitle }}
+        <v-chip color="amber" size="x-small" variant="flat" class="ml-2 font-weight-bold">BETA</v-chip>
       </v-toolbar-title>
       
       <v-spacer></v-spacer>
@@ -127,7 +131,7 @@ const currentTitle = computed(() => {
     case 'Game':
       return `Партия: ${store.activeGame?.white_name || ''} - ${store.activeGame?.black_name || ''}`;
     case 'GlobalPlayer': 
-      return store.playerProfile?.canonical_name || 'Профиль игрока';
+      return 'Профиль игрока';
     default:
       return 'Шахматы на Проспекте Мира, 43';
   }
