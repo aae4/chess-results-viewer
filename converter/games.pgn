@@ -1383,3 +1383,345 @@ Bf8 47.Qg6+ Qg7 48.Qxg7+ Kxg7 49.Kf3 Kf6 50.Ke4 Be7 51.f4 h5
 52.h3 Bd8 53.g4 hxg4 54.hxg4 Kg6 55.Kf3 Ba5 56.Ke4 Bc3 57.Kf3
 Kf6 58.Ke4 Be1 1/2-1/2
 
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.18"]
+[Round "?"]
+[White "Хачатуров Карен"]
+[Black "Дашков Александр"]
+[Result "1/2-1/2"]
+[ECO "B06"]
+[WhiteElo "1290"]
+[BlackElo "1380"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 g6 2.d4 Bg7 3.Nf3 d6 4.Bc4 h6 5.O-O Nd7 6.c3 c6 7.a4 Nb6
+8.Bb3 Qc7 9.h3 Nf6 10.Qe2 e5 11.Nbd2 O-O 12.dxe5 dxe5 13.Re1
+Nh5 14.Nf1 Qe7 15.Kh2 Kh7 16.g3 Qd7 17.Ng1 Qe7 18.a5 Nd7 19.Be3
+Nhf6 20.Bc2 Nc5 21.Qc4 Na6 22.g4 Be6 23.Qe2 Nc5 24.Ng3 Nfd7 25.b4
+Na6 26.Bd3 Nc7 27.Reb1 a6 28.f3 Nb5 29.Rc1 Rad8 30.Qf2 Nb8 31.Bc5
+Nd6 32.Rd1 Rd7 33.c4 Qd8 34.Qc2 Re8 35.Bb6 Qg5 36.Qe2 Nc8 37.Be3
+Qd8 38.c5 Qf6 39.Qc2 Red8 40.Be2 Na7 41.Rxd7 Rxd7 42.Rd1 Qe7
+43.Rxd7 Nxd7 44.Bd3 Nb5 45.N1e2 f6 46.Nf1 Qf7 47.Nd2 Nf8 48.Nc4
+g5 49.Ng3 Ng6 50.Nf5 Bf8 51.Nd2 Qd7 52.Bc4 Bxf5 53.exf5 Nf4 54.Ne4
+Kg7 55.Qd2 Nd4 56.Kg3 Be7 57.Nc3 Qd8 58.Bxf4 gxf4+ 59.Kf2 Qe8
+60.Ne2 Nb5 61.Be6 Nc7 62.Bc4 h5 63.Nc3 hxg4 64.fxg4 Bf8 65.Ne4
+Nb5 66.Nc3 Nd4 67.Ne2 Nb5 68.Be6 Nc7 69.Bb3 Qe7 70.Qd3 e4 71.Qc4
+Nd5 72.Qd4 f3 73.Bxd5 fxe2 74.Bxe4 Qf7 75.Kxe2 Qa2+ 76.Kf3 Qb3+
+77.Bd3 Qd1+ 78.Kg2 Qd2+ 79.Kg3 Qe1+ 80.Kf4 Qd2+ 81.Kf3 Qd1+ 82.Ke3
+Qc1+ 83.Ke2 Qa3 84.Kd2 Kh7 85.h4 Qa2+ 86.Bc2 Bh6+ 87.Kd1 Qa3
+88.Qd7+ Kg8 89.Qe8+ Bf8 90.Qg6+ Bg7 91.Qe8+ Bf8 92.Qe6+ Kg7 93.g5
+Qf3+ 94.Kc1 Qf4+ 95.Kb2 Qxb4+ 96.Bb3 Qd4+ 97.Ka2 Qd2+ 98.Kb1
+Qd3+ 1/2-1/2
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Чекушина Нина"]
+[Black "Семенихин Алексей"]
+[Result "0-1"]
+[ECO "B30"]
+[WhiteElo "1099"]
+[BlackElo "1000"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.Nf3 c5 2.e4 Nc6 3.Bb5 Qc7 4.d3 e6 5.Nc3 Nf6 6.h3 Be7 7.e5 Nxe5
+8.Nxe5 Qxe5+ 9.Qe2 Qc7 10.Bg5 a6 11.Ba4 b5 12.Bb3 Bb7 13.f3 O-O
+14.a3 d5 15.O-O-O d4 16.Ne4 Nxe4 17.Bxe7 Ng3 18.Qf2 Nxh1 19.Rxh1
+Qxe7 20.Qg3 Rac8 21.Re1 c4 22.dxc4 bxc4 23.Ba2 d3 24.Kd2 Rfd8
+25.c3 Qd7 26.b3 cxb3 27.Bxb3 Qc7 28.Qe5 Qb6 29.Bxe6 Qxe6 30.Qxe6
+fxe6 31.Rxe6 Rxc3 32.Kxc3 d2 33.Re7 d1Q 34.Rxb7 Rc8+ 35.Kb4 Qb1+
+36.Ka4 Qxb7 37.h4 Qb5# 0-1
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Пыталев Дмитрий"]
+[Black "Илюшко Николай"]
+[Result "1-0"]
+[ECO "A44"]
+[WhiteElo "1451"]
+[BlackElo "1079"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 c5 2.d5 e5 3.dxe6 fxe6 4.e4 Nc6 5.Nf3 Be7 6.Bc4 Nf6 7.Nc3
+O-O 8.O-O Na5 9.Bd3 c4 10.Be2 d5 11.exd5 exd5 12.Nd4 Nc6 13.Bf3
+a6 14.Re1 Bc5 15.Be3 Ba7 16.Qd2 Re8 17.Rad1 Nxd4 18.Bxd4 Rxe1+
+19.Qxe1 1-0
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Гафуров Мухамедимин"]
+[Black "Филиппов Александр"]
+[Result "0-1"]
+[ECO "C77"]
+[WhiteElo "1402"]
+[BlackElo "1770"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.d3 b5 6.Bb3 Be7 7.c3 O-O
+8.O-O d5 9.exd5 Nxd5 10.Re1 Bg4 11.h3 Bh5 12.g4 Bg6 13.Nxe5 Nxe5
+14.Rxe5 c6 15.Qf3 Bd6 16.Re1 Bc7 17.Nd2 Qd6 18.Ne4 Qh2+ 19.Kf1
+f5 20.gxf5 Bxf5 21.Ke2 Bxe4 22.dxe4 Rxf3 23.Kxf3 Rf8+ 24.Kg4
+Qg2+ 0-1
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Малина Ольга"]
+[Black "Король Ян"]
+[Result "1/2-1/2"]
+[ECO "C44"]
+[WhiteElo "1073"]
+[BlackElo "1324"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 e5 2.Nf3 Nc6 3.c3 d5 4.Bb5 Bg4 5.exd5 a6 6.Bxc6+ bxc6 7.dxc6
+e4 8.h3 Qe7 9.hxg4 exf3+ 10.Kf1 fxg2+ 11.Kxg2 Qe4+ 12.Qf3 Qe6
+13.d4 Nf6 14.Bd2 Qxg4+ 15.Qxg4 Nxg4 16.Bf4 Kd8 17.Re1 h5 18.f3
+Nf6 19.c4 Bb4 20.Re2 Rb8 21.a3 Be7 22.Bxc7+ Kxc7 23.Rxe7+ Kxc6
+24.Rxf7 Rxb2+ 25.Kh3 Rd8 26.d5+ Kd6 27.Nc3 Rc2 28.Ne4+ Nxe4 29.fxe4
+Rxc4 30.Re1 Re8 31.Rxg7 Rexe4 32.Rxe4 Rxe4 33.Rg6+ Kxd5 34.Rxa6 1/2-1/2
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Маркелов Андрей"]
+[Black "Хачатуров Карен"]
+[Result "1-0"]
+[ECO "B22"]
+[WhiteElo "1387"]
+[BlackElo "1290"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 c5 2.c3 d5 3.exd5 Qxd5 4.d4 Nc6 5.dxc5 Qxc5 6.Be3 Qa5 7.Nf3
+Bg4 8.Be2 Nf6 9.Nbd2 e5 10.O-O Be7 11.Re1 O-O 12.h3 Bf5 13.Qb3
+Qc7 14.Rad1 Rad8 15.Nf1 Be6 16.Qa4 Nd5 17.Bd3 Nxe3 18.Nxe3 a6
+19.Qc2 h6 20.Nf5 Bf6 21.Ng3 g6 22.Ne4 Bg7 23.Nc5 Bc8 24.b4 b6
+25.Ne4 Kh7 26.a4 f5 27.Ng3 e4 28.Nxe4 fxe4 29.Bxe4 Bf5 30.Bxf5
+Rxf5 31.Rxd8 Nxd8 32.c4 Nc6 33.b5 Nb4 34.Qe2 a5 35.g3 Qf7 36.Kg2
+Rc5 37.Rc1 Qf5 38.Nh4 Qd3 39.Qe6 Na2 40.Rd1 Re5 41.Qxe5 Qxd1
+42.Qe6 Qd3 43.Qxb6 g5 44.Nf3 Qxc4 45.Qxa5 Nc3 46.b6 Nxa4 47.b7
+Qg8 48.Qf5+ Kh8 49.Qc8 Nb6 50.Qxg8+ Kxg8 51.b8Q+ 1-0
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Дашков Александр"]
+[Black "Кулигина Елена"]
+[Result "1-0"]
+[ECO "B20"]
+[WhiteElo "1380"]
+[BlackElo "1000"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 c5 2.Bc4 e6 3.c3 a6 4.Bb3 Qc7 5.d3 Nc6 6.Nf3 d6 7.Nbd2 Nf6
+8.O-O Be7 9.h3 h6 10.Re1 b6 11.Nf1 Bb7 12.Bf4 e5 13.Bh2 O-O 14.Ng3
+Rad8 15.Nf5 Rd7 16.Nxe7+ Nxe7 17.Qe2 Ng6 18.g3 Re8 19.Nd2 Rdd8
+20.c4 b5 21.Bc2 bxc4 22.dxc4 Bc8 23.g4 Nf4 24.Bxf4 exf4 25.f3
+h5 26.Kf2 Re5 27.Rg1 hxg4 28.hxg4 Nh7 29.Qf1 g6 30.Qh3 Rh5 31.Qg2
+Rh4 32.Rh1 g5 33.Rxh4 gxh4 34.Rh1 Qe7 35.Qh2 Qe5 36.Qxh4 Qd4+
+37.Ke1 Qg7 38.Qxd8+ Qf8 39.Qxf8+ Nxf8 40.Ba4 Be6 41.a3 Ng6 42.Ke2
+Kg7 43.b4 Ne5 44.Bb3 Nc6 45.b5 axb5 46.cxb5 Nd4+ 47.Kf2 Nxb5
+48.Bxe6 fxe6 49.a4 Nc3 50.a5 d5 51.a6 Nb5 52.Rb1 Nc3 53.Rb7+ 1-0
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Мендоса Кирога Сантьяго"]
+[Black "Рыжков Александр"]
+[Result "1-0"]
+[ECO "B30"]
+[WhiteElo "1031"]
+[BlackElo "1000"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 c5 2.Nf3 Nc6 3.b4 b6 4.b5 Na5 5.d4 Nb7 6.Bc4 d6 7.O-O g6
+8.Bb2 Bg7 9.Nc3 Nf6 10.Qe2 O-O 11.Rad1 Na5 12.e5 Ne8 13.Bd5 Rb8
+14.e6 f6 15.dxc5 bxc5 16.a4 Bb7 17.Qd2 Qc7 18.Bxb7 Qxb7 19.Nd5
+Nc4 20.Qc3 Nxb2 21.Qxb2 Nc7 22.Nxe7+ Kh8 23.Rxd6 Rfe8 24.Rd7
+Rbd8 25.Rfd1 Qa8 26.Nc6 Rxd7 27.exd7 Rd8 28.Nxd8 Qxd8 29.Qc3
+Ne6 30.Qe3 Qg8 31.Rd6 Bf8 32.Rxe6 Bh6 33.Qe4 f5 34.Qe5+ Bg7 35.Qd5
+Bf6 36.Re8 1-0
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Ильинский Юрий"]
+[Black "Чернов Игорь"]
+[Result "1/2-1/2"]
+[ECO "E16"]
+[WhiteElo "1512"]
+[BlackElo "1629"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.g3 Bb7 5.Bg2 Bb4+ 6.Nbd2 O-O 7.O-O
+d5 8.Ne5 Bxd2 9.Qxd2 Ne4 10.Qf4 f6 11.Nd3 Na6 12.b3 dxc4 13.Bxe4
+Bxe4 14.Qxe4 cxd3 15.Qxe6+ Rf7 16.Ba3 Qxd4 17.exd3 c5 18.Qc4
+Qxc4 19.dxc4 Rd7 20.Rad1 Rad8 21.Rxd7 Rxd7 22.f3 Nb8 23.Re1 Kf7
+24.Kf2 Nc6 25.Re2 Rd1 26.Re1 Rxe1 27.Kxe1 Nd4 28.Kf2 Nc2 29.Bb2
+Nb4 30.Bc3 Nxa2 31.Bd2 Ke6 32.Ke3 Nb4 1/2-1/2
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Лион Эдуард"]
+[Black "Мансурский Шевкет"]
+[Result "0-1"]
+[ECO "B14"]
+[WhiteElo "1048"]
+[BlackElo "1141"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 Nf6 2.Nf3 e6 3.c4 c6 4.a3 Be7 5.Nc3 a6 6.Bg5 h6 7.Bd2 b5
+8.c5 d5 9.e3 Ne4 10.Qc2 f5 11.Nxe4 fxe4 12.Ng1 O-O 13.Bc3 Nd7
+14.O-O-O a5 15.Be1 Bg5 16.Nh3 Bf6 17.Nf4 Qe8 18.h4 e5 19.Ne2
+exd4 20.Nxd4 Ne5 21.Bc3 Ng4 22.g3 Bxd4 23.Rxd4 Rxf2 24.Qb1 Qf8
+25.Bd2 Rxf1+ 26.Rxf1 Qxf1+ 27.Kc2 Qxb1+ 28.Kxb1 Nf2 29.Be1 Nd3
+30.Bd2 Bg4 31.Kc2 a4 32.b4 Rf8 33.Kc3 Rf3 0-1
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Цыбаков Сергей"]
+[Black "Головнин Александр"]
+[Result "1-0"]
+[ECO "D02"]
+[WhiteElo "1587"]
+[BlackElo "1410"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.Nf3 e6 3.g3 f5 4.Bg2 Nf6 5.Nbd2 Bd6 6.O-O O-O 7.c4
+c6 8.b3 Nbd7 9.Bb2 Ne4 10.Ne5 Qc7 11.Ndf3 Ndf6 12.e3 Bd7 13.Nxd7
+Qxd7 14.Ne5 Qe7 15.f3 Ng5 16.Qc2 Nd7 17.f4 Ne4 18.Bxe4 fxe4 19.Nxd7
+Qxd7 20.c5 Bc7 21.b4 a6 22.Qe2 Rf7 23.a4 Rff8 24.Bc3 g6 25.b5
+axb5 26.axb5 Rfb8 27.b6 Bd8 28.Ra2 Qc8 29.Rfa1 Rxa2 30.Qxa2 Be7
+31.Kg2 Qf8 32.h3 g5 33.Qf2 Qf7 34.Ra7 h5 35.g4 hxg4 36.hxg4 Kg7
+37.Qg3 Qg8 38.f5 exf5 39.Qe5+ Kf7 40.Qxf5+ Kg7 41.Be1 Rf8 42.Qe5+
+Kf7 43.Rxb7 Re8 44.Qf5+ 1-0
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Кузнецов Юрий"]
+[Black "Рыбаков Юрий"]
+[Result "1-0"]
+[ECO "D02"]
+[WhiteElo "1412"]
+[BlackElo "1436"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.Nf3 e6 3.Bf4 c5 4.e3 Nc6 5.c3 Nf6 6.Nbd2 a6 7.Bd3 b5
+8.O-O Bb7 9.Re1 cxd4 10.exd4 Bd6 11.Ne5 O-O 12.Qf3 Rc8 13.a3
+Be7 14.Qh3 g6 15.g4 Nxe5 16.Bxe5 Nd7 17.Bg3 Nb6 18.Nf3 Nc4 19.Rab1
+Bf6 20.Re2 Re8 21.Be5 Nxe5 22.dxe5 Be7 23.Nd4 Qb6 24.Qe3 Bc5
+25.f4 Re7 26.h4 Rce8 27.Kh2 Bxd4 28.cxd4 Kg7 29.f5 exf5 30.gxf5
+Bc8 31.f6+ Kh8 32.Qh6 Rg8 33.fxe7 Qe6 34.Re3 Bd7 35.Qg5 Re8 36.Qf6+
+Kg8 37.Qxe6 Bxe6 38.Rc1 Rxe7 39.Rc6 Ra7 40.h5 Kf8 41.h6 Ke7 42.Re1
+Bd7 43.Rc5 Be6 44.Rec1 Kd7 45.Rc6 1-0
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Гаан Анатолий"]
+[Black "Васильев Владимир"]
+[Result "1-0"]
+[ECO "D50"]
+[WhiteElo "1000"]
+[BlackElo "1099"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.c4 e6 3.Nc3 Nf6 4.Bg5 c6 5.e3 dxc4 6.Bxc4 Bb4 7.Nge2
+Qa5 8.Bxf6 gxf6 9.O-O f5 10.Rc1 Nd7 11.Nf4 Nf6 12.Nce2 Bd6 13.f3
+Bd7 14.Qd3 Nd5 15.a3 Qd8 16.Bxd5 cxd5 17.e4 fxe4 18.fxe4 dxe4
+19.Qxe4 Bc6 20.d5 Bxf4 21.Nxf4 Bxd5 22.Nxd5 Qxd5 23.Qxd5 exd5
+24.Rc7 O-O 25.Rxb7 Rab8 26.Rxb8 Rxb8 27.b4 a5 28.Rb1 axb4 29.Rxb4
+Ra8 30.a4 Kf8 31.Kf2 Ke7 32.Ke3 Ke6 33.Kd4 Ra5 34.Kc3 Ke5 35.Rh4
+f5 36.Kb4 Ra7 37.Kc5 Rc7+ 38.Kb6 Rc4 39.Rxh7 Rxa4 40.Kb5 Ra2
+41.g3 Rc2 42.Re7+ Kd6 43.Rf7 Ke6 44.Rh7 d4 45.Kb4 d3 46.Kb3 Rc6
+47.Rh6+ Kd5 48.Rxc6 Kxc6 49.Kc3 Kd6 50.Kxd3 Ke5 51.Ke3 Kf6 52.Kf4
+Kg6 53.Ke5 Kg5 54.h3 Kg6 55.Ke6 Kg5 56.Ke5 Kg6 57.h4 1-0
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Сухарев Владимир"]
+[Black "Буланов Максим"]
+[Result "0-1"]
+[ECO "C54"]
+[WhiteElo "1341"]
+[BlackElo "1270"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.c3 Nf6 5.d4 exd4 6.e5 d5 7.Bb5
+Ne4 8.b4 Bb6 9.Nxd4 Bd7 10.Bxc6 bxc6 11.Qh5 Qe7 12.O-O O-O 13.f3
+Nxc3 14.Be3 Ne2+ 15.Nxe2 Bxe3+ 16.Kh1 Qxb4 17.Nbc3 Qe7 18.f4
+f6 19.Rf3 Bc5 20.Raf1 fxe5 21.fxe5 Rxf3 22.Rxf3 Rf8 23.Ng3 Rxf3
+24.gxf3 Bd4 25.f4 Bxc3 26.Nf5 Qf7 0-1
+
+[Event "Ноябрьский кубок ЦАО-2025"]
+[Site "Москва, проспект мира, 43."]
+[Date "2025.11.20"]
+[Round "?"]
+[White "Станкевич Евгений"]
+[Black "Абазов Асланбек"]
+[Result "0-1"]
+[ECO "A80"]
+[WhiteElo "1276"]
+[BlackElo "1292"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 c6 2.e3 Nf6 3.Nf3 d5 4.Nbd2 Bg4 5.Be2 e6 6.h3 Bh5 7.O-O
+Bd6 8.c4 O-O 9.c5 Be7 10.Ne5 Bxe2 11.Qxe2 a5 12.Qd3 b6 13.cxb6
+Qxb6 14.b3 c5 15.Ba3 Nbd7 16.f4 Rfe8 17.g4 cxd4 18.Bxe7 dxe3
+19.Ndc4 dxc4 20.Nxc4 Qa7 21.Bxf6 Nxf6 22.Qxe3 Qe7 23.Rfe1 Nd5
+24.Qg3 a4 25.Rad1 axb3 26.axb3 Rab8 27.Rxd5 Qa7+ 28.Kf1 exd5
+29.Ne5 f6 30.Nd3 Qa6 31.Rxe8+ Rxe8 32.Qf3 Qa1+ 33.Kf2 Qa2+ 34.Kg3
+Qxb3 35.Kh4 d4 36.g5 Qe6 37.f5 Qe4+ 38.Qxe4 Rxe4+ 39.Kh5 Re3
+40.Nf4 d3 41.Nxd3 Rxd3 42.gxf6 gxf6 43.h4 Kg7 44.Kg4 Kh6 45.Kf4
+Kh5 46.Ke4 Rd6 47.Ke3 Kxh4 0-1
+
