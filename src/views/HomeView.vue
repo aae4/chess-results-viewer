@@ -46,7 +46,7 @@
     <template v-if="currentTournament">
       <v-row>
         <v-col cols="12" lg="8">
-          <v-card variant="flat" color="grey-lighten-5" class="fill-height">
+          <v-card variant="flat" class="fill-height card-footer-bg">
             <v-card-item>
               <v-card-title>Текущий турнир: Лидеры</v-card-title>
               <v-card-subtitle>{{ currentTournament?.name }}</v-card-subtitle>
@@ -80,7 +80,7 @@
         </v-col>
 
         <v-col cols="12" lg="4">
-          <v-card class="fill-height" variant="flat" color="grey-lighten-5">
+          <v-card class="fill-height card-footer-bg" variant="flat">
             <v-card-item>
               <v-card-title>Недавние партии</v-card-title>
             </v-card-item>
@@ -257,5 +257,9 @@ const currentTournamentInfo = computed(() => {
 .nav-card-icon {
   margin-right: 20px;
   color: var(--v-theme-primary);
+}
+
+.card-footer-bg {
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 </style>
