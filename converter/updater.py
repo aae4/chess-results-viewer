@@ -9,7 +9,10 @@ import argparse
 import random
 from datetime import datetime
 
-### 1287717
+### Декабрьский кубок ЦАО 2025
+# Текущий турнир
+# https://s2.chess-results.com/tnr1305980.aspx?lan=11&art=2&rd=1&SNode=S0
+# id: 1305980
 
 # --- ГЛОБАЛЬНЫЕ НАСТРОЙКИ ---
 DB_NAME = './database.sqlite'
