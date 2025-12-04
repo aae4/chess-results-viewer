@@ -511,32 +511,41 @@ async def main(tnr_id):
                 result = game_from_site['result']
                 is_tech = is_technical(game_from_site, pgn_moves)
 
-                # Логика поиска существующей записи с учетом NULL (bye fix)
-                if black_perf_id is None:
-                    cursor.execute("""
-                        SELECT id FROM games 
-                        WHERE white_performance_id = ? AND black_performance_id IS NULL AND tournament_id = ?
-                    """, (white_perf_id, tournament_id))
-                else:
-                    cursor.execute("""
-                        SELECT id FROM games 
-                        WHERE white_performance_id = ? AND black_performance_id = ? AND tournament_id = ?
-                    """, (white_perf_id, black_perf_id, tournament_id))
+                # # Логика поиска существующей записи с учетом NULL (bye fix)
+                # if black_perf_id is None:
+                #     cursor.execute("""
+                #         SELECT id FROM games 
+                #         WHERE white_performance_id = ? AND black_performance_id IS NULL AND tournament_id = ?
+                #     """, (white_perf_id, tournament_id))
+                # else:
+                #     cursor.execute("""
+                #         SELECT id FROM games 
+                #         WHERE white_performance_id = ? AND black_performance_id = ? AND tournament_id = ?
+                #     """, (white_perf_id, black_perf_id, tournament_id))
+                
+                # Вместо поиска по ID игроков, ищем по уникальному ключу партии: ТУРНИР + ТУР + ДОСКА
+                cursor.execute("""
+                    SELECT id FROM games 
+                    WHERE tournament_id = ? AND round = ? AND board = ?
+                """, (tournament_id, game_from_site['round'], game_from_site['board']))
                 
                 existing_game = cursor.fetchone()
 
                 if existing_game:
+                    # Если запись есть, обновляем не только результат, но и ИГРОКОВ (на случай замены или bye -> пара)
                     cursor.execute("""
                         UPDATE games SET 
+                            white_performance_id = ?,
+                            black_performance_id = ?,
                             result = ?, 
                             pgn_moves = COALESCE(?, pgn_moves), 
                             eco_code = COALESCE(?, eco_code),
                             game_date = COALESCE(?, game_date),
                             is_technical = ?
                         WHERE id = ?
-                    """, (result, pgn_moves, eco_code, game_date, is_tech, existing_game[0]))
+                    """, (white_perf_id, black_perf_id, result, pgn_moves, eco_code, game_date, is_tech, existing_game[0]))
                 else:
-                    # ВСТАВКА (INSERT): Добавлено поле eco
+                    # ВСТАВКА (INSERT)
                     cursor.execute("""
                         INSERT INTO games (tournament_id, white_performance_id, black_performance_id, round, board, result, pgn_moves, eco_code, game_date, is_technical) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
