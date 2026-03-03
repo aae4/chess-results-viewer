@@ -10,8 +10,8 @@ import random
 from datetime import datetime
 
 # Текущий турнир
-# https://s2.chess-results.com/Tnr1345055.aspx?lan=11&SNode=S0
-# id: 1345055
+# https://s2.chess-results.com/Tnr1361878.aspx?lan=11&SNode=S0
+# id: 1361878
 
 # --- ГЛОБАЛЬНЫЕ НАСТРОЙКИ ---
 DB_NAME = './database.sqlite'
