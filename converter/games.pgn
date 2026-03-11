@@ -727,3 +727,378 @@ Kf6 42.Kg2 Ke5 43.Rh4 axb4 44.axb4 d4 45.Rxh7 Rxb4 46.Re7+ Kd5
 47.Kf3 Rb3+ 48.Kf4 Rd6 49.h4 Re6 50.Rxe6 Kxe6 51.Rxd4 Rb6 52.Kg5
 Ke7 53.h5 gxh5 54.Kxf5 Rb3 55.Kg5 1/2-1/2
 
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Ходорадзе Гия"]
+[Black "Гимазов Евгений"]
+[Result "1-0"]
+[ECO "C68"]
+[WhiteElo "1353"]
+[BlackElo "1197"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.O-O Bd6 6.d4 exd4 7.Qxd4
+f6 8.Re1 Kf7 9.e5 Be7 10.Qc3 Be6 11.Nd4 Qd5 12.Nxe6 Qxe6 13.Nd2
+Rd8 14.Nf3 c5 15.exf6 Qxf6 16.Qc4+ Kf8 17.Bg5 Qf7 18.Qh4 h6 19.Bxe7+
+Nxe7 20.Ng5 Ng6 21.Nxf7 Nxh4 22.Nxd8 b6 23.Rad1 Nf5 24.Ne6+ 1-0
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Каширский Евгений"]
+[Black "Малина Ольга"]
+[Result "1-0"]
+[ECO "C45"]
+[WhiteElo "1208"]
+[BlackElo "1131"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4 Bc5 5.Nxc6 bxc6 6.Qf3 Ne7
+7.Nc3 a6 8.Bc4 O-O 9.O-O Bb7 10.Bg5 d5 11.exd5 cxd5 12.Bxe7 Qxe7
+13.Bxd5 Bxd5 14.Nxd5 Qe5 15.c3 Bd6 16.g3 c6 17.Nb6 Ra7 18.Qxc6
+Qc5 19.Qxc5 Bxc5 20.Na4 Be7 21.Rfe1 Re8 22.Re4 f5 23.Re5 g6 24.Rae1
+Kf7 25.b4 Rc8 26.f4 Bf6 27.R5e3 Rc4 28.Nb6 Rxc3 29.Nd5 Rxe3 30.Nxe3
+Bc3 31.Rb1 Rb7 32.Nc2 Rb5 33.a4 Rb7 34.Rb3 Bd2 35.Kf2 Re7 36.Rd3
+Bc1 37.b5 axb5 38.axb5 Rb7 39.Rb3 Bd2 40.Ke2 Ba5 41.Ne3 Bb6 42.Nc4
+Ke6 43.Nxb6 Rxb6 44.Kd3 Kd5 45.Kc3 Kc5 46.Rb2 Rxb5 47.Rxb5+ Kxb5
+48.Kd4 Kc6 49.Ke5 Kc5 50.Kf6 Kd4 51.Kg7 Ke3 52.Kxh7 Kf3 53.Kxg6
+Kg4 54.Kf6 Kh3 55.Kxf5 1-0
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Фомина Анна"]
+[Black "Маслов Андрей"]
+[Result "0-1"]
+[ECO "C45"]
+[WhiteElo "1292"]
+[BlackElo "1533"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4 Qh4 5.Nb5 Qxe4+ 6.Qe2 Qxe2+
+7.Bxe2 Kd8 8.Bf4 d6 9.Nd2 a6 10.Nc3 Nf6 11.O-O-O Be6 12.Nf3 h6
+13.Ne5 Nxe5 14.Bxe5 Be7 15.Bf3 Kc8 16.Bg3 Rd8 17.Rhe1 c6 18.Na4
+Ra7 19.Bf4 b5 20.Be3 c5 21.Nb6+ Kc7 22.Nd5+ Nxd5 23.Bxd5 Kb6
+24.b4 Bxd5 25.Rxd5 Kc6 26.Rf5 Bf8 27.Rd1 Rad7 28.bxc5 dxc5 29.Rxd7
+Rxd7 30.h4 f6 31.g4 Rd5 32.Rf4 Bd6 33.Re4 Re5 34.Rxe5 Bxe5 35.Kd2
+Kd5 36.f4 Bd4 37.Bxd4 Kxd4 38.g5 Ke4 39.gxh6 gxh6 40.f5 Kxf5
+41.Kd3 Ke5 42.c4 b4 0-1
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Рыжков Александр"]
+[Black "Банников Александр"]
+[Result "0-1"]
+[ECO "D00"]
+[WhiteElo "1000"]
+[BlackElo "1299"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.Bf4 e6 3.e3 a6 4.Nd2 Nf6 5.Ngf3 Nbd7 6.Bd3 c5 7.c3
+Be7 8.h3 b5 9.Ne5 Bb7 10.Ndf3 h6 11.O-O O-O 12.Nxd7 Nxd7 13.Ne5
+Nf6 14.Ng4 Ne4 15.f3 Nf6 16.Nxf6+ Bxf6 17.Bc2 c4 18.Bb1 Bg5 19.Qc2
+g6 20.Be5 Bf6 21.f4 Bg7 22.Rf3 Qh4 23.Qf2 Qxf2+ 24.Kxf2 Rac8
+25.Bd6 Rfe8 26.Bc2 a5 27.a3 Kh7 28.h4 h5 29.Kg3 f6 30.Kh3 Rc6
+31.Bc5 Bc8 32.Kh2 e5 33.f5 e4 34.Rg3 Bxf5 35.Rf1 Bg4 36.Rf4 Bh6
+37.Rfxg4 hxg4 38.Rxg4 Bxe3 39.a4 b4 40.cxb4 axb4 41.Bxb4 Bxd4
+42.b3 Be5+ 43.g3 cxb3 44.Bxb3 Rb6 45.Bxd5 Rxb4 46.Bf7 Rd8 47.Bxg6+
+Kh8 48.Bf5 Rdd4 49.Rg6 e3 50.Be6 Rxh4+ 51.Kg2 Rb2+ 52.Kf3 Rhh2
+53.Kxe3 Rhe2+ 54.Kd3 Rbd2+ 55.Kc4 Rg2 56.g4 Rc2+ 57.Kb4 Rb2+
+58.Bb3 Rg3 59.Rg8+ Kh7 0-1
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Бельский Владимир"]
+[Black "Гафуров Мухамедимин"]
+[Result "1-0"]
+[ECO "B07"]
+[WhiteElo "1000"]
+[BlackElo "1392"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 d6 2.d4 Nf6 3.Nc3 g6 4.Bc4 Bg7 5.h3 O-O 6.Be3 Nxe4 7.Nxe4
+d5 8.Bd3 dxe4 9.Bxe4 Nd7 10.c3 Nf6 11.Bc2 Nd5 12.Bd2 e5 13.Qf3
+exd4 14.Bb3 dxc3 15.bxc3 Be6 16.Ne2 c5 17.Rd1 Nf6 18.Bf4 Qa5
+19.O-O c4 20.Bc2 Bd5 21.Qg3 Nh5 22.Qg5 Nxf4 23.Nxf4 Qxa2 24.Bb1
+Qb2 25.Nxd5 a5 26.h4 h6 27.Qg4 h5 28.Qg5 Ra6 29.g4 hxg4 30.Qxg4
+b5 31.Nf4 Qxc3 32.h5 Qf6 33.Rfe1 gxh5 34.Nxh5 Qh6 35.Re5 f6 36.Re7
+Rf7 37.Rd8+ 1-0
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Сухачёв Валерий"]
+[Black "Исправникова Наталья"]
+[Result "1/2-1/2"]
+[ECO "D02"]
+[WhiteElo "1491"]
+[BlackElo "1264"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.Bf4 Nf6 3.e3 e6 4.Nf3 Be7 5.h3 Nbd7 6.Bd3 c5 7.Nbd2
+b6 8.c3 Bb7 9.O-O O-O 10.a4 Re8 11.Qe2 Ne4 12.Ne5 f6 13.Nxd7
+Qxd7 14.Nxe4 dxe4 15.Bb5 Bc6 16.Rfd1 Qb7 17.Rd2 a6 18.Bc4 Bd5
+19.Rad1 Red8 20.Bxd5 exd5 21.Qg4 c4 22.Qe6+ Kh8 23.b4 b5 24.a5
+Qd7 25.Qxd7 Rxd7 26.h4 f5 27.g3 Re8 28.Kg2 Bd6 29.Kh3 h5 1/2-1/2
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Добровский Кирилл"]
+[Black "Васильев Владимир"]
+[Result "0-1"]
+[ECO "D04"]
+[WhiteElo "1322"]
+[BlackElo "1428"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.Nf3 Nf6 3.e3 Bg4 4.c4 e6 5.Qb3 b6 6.Ne5 c6 7.cxd5 exd5
+8.Nxg4 Nxg4 9.Be2 Nf6 10.Nd2 Bd6 11.Qc2 O-O 12.O-O Qc7 13.h3
+Re8 14.b3 Nbd7 15.Bb2 h6 16.Rac1 Re6 17.Nf3 Qb7 18.Bd3 Rc8 19.Qe2
+Rc7 20.Rc2 g6 21.Rfc1 Ne4 22.Nd2 Nxd2 23.Qxd2 Nf6 24.Qd1 Qc8
+25.Be2 h5 26.Bf3 Qd7 27.Qd3 Rc8 28.Qa6 Bb8 29.b4 Qc7 30.b5 c5
+31.dxc5 bxc5 32.Qa4 Ne4 33.Qb3 c4 34.Qb4 Qh2+ 35.Kf1 Bd6 36.Qa5
+Bc5 37.Ke2 Nxf2 38.Rc3 Nd3 0-1
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Якубович Владимир"]
+[Black "Прутковский Степан"]
+[Result "1-0"]
+[ECO "B07"]
+[WhiteElo "1437"]
+[BlackElo "1617"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 Nf6 2.Nf3 g6 3.Nc3 Bg7 4.e4 d6 5.g3 O-O 6.Bg2 Nc6 7.h3 e5
+8.d5 Ne7 9.O-O Ne8 10.g4 f5 11.exf5 gxf5 12.gxf5 Bxf5 13.Ng5
+Nf6 14.Be3 Qd7 15.Kh2 Ng6 16.Rg1 Rae8 17.Nce4 Nxe4 18.Bxe4 Bxe4
+19.Nxe4 Nf4 20.Bxf4 Rxf4 21.Qe2 Qf5 22.Rg4 h5 23.Rxf4 exf4 24.Nf6+
+Bxf6 25.Qxe8+ Kh7 26.Qf7+ Kh6 27.Rg1 f3 28.Qf8+ Kh7 29.Rg7+ 1-0
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Чернов Игорь"]
+[Black "Толенгит Арман"]
+[Result "0-1"]
+[ECO "B36"]
+[WhiteElo "1556"]
+[BlackElo "1820"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 g6 5.c4 Nf6 6.Nc3 Nxd4 7.Qxd4
+d6 8.Be3 Bg7 9.f3 O-O 10.Qd2 a6 11.Be2 Qa5 12.O-O Be6 13.Rac1
+Rac8 14.Nd5 Qxd2 15.Bxd2 Nxd5 16.exd5 Bf5 17.g4 Bd7 18.b3 b5
+19.Kg2 bxc4 20.Bxc4 e6 21.Rfe1 exd5 22.Bxd5 Rxc1 23.Rxc1 Re8
+24.Bb4 Re2+ 25.Kf1 Bb5 26.Rc8+ Re8+ 27.Rc4 Rb8 28.Ba5 Bxc4+ 29.Bxc4
+d5 30.Bd3 Rc8 31.Ke2 Rc1 32.a4 Bc3 33.Bxc3 Rxc3 34.b4 Rb3 35.b5
+axb5 36.Bxb5 Kf8 37.Bc6 d4 38.h4 Ke7 39.h5 Kf6 40.f4 g5 41.fxg5+
+Kxg5 42.Bd7 h6 43.Kd2 f6 44.Kc2 Rc3+ 45.Kb2 Rc7 46.Bf5 Kf4 47.Kb3
+Ke3 48.a5 d3 0-1
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Цыбаков Сергей"]
+[Black "Козлов Валерий"]
+[Result "1/2-1/2"]
+[ECO "D02"]
+[WhiteElo "1492"]
+[BlackElo "1364"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.Bf4 Nf6 3.Nf3 e6 4.Nbd2 Be7 5.e3 c5 6.c3 Nc6 7.h3 O-O
+8.Qc2 a6 9.a4 Re8 10.Be2 Bd6 11.Bxd6 Qxd6 12.O-O h6 13.Rfe1 e5
+14.dxe5 Nxe5 15.Nxe5 Qxe5 16.Nf3 Qe7 17.Rad1 Bd7 18.a5 Bc6 19.b3
+Rad8 20.Qb2 Ne4 21.Bd3 Qf6 22.Rc1 Kh8 23.b4 c4 24.Bxe4 Rxe4 25.Nd4
+Bd7 26.Qe2 Qg6 27.Qf3 Re5 28.Kh2 Rde8 29.Qg3 Rg5 30.Qf3 Qd6+
+31.Kh1 Kg8 32.Rcd1 Qe5 33.Qf4 Qe4 34.Qxe4 Rxe4 35.Kh2 Rg6 36.f4
+Rf6 37.Nf3 Bc6 38.Nd4 Bd7 39.g3 Rd6 40.Kg2 g6 41.Rd2 Bc6 42.Nxc6
+bxc6 43.Kf3 Kg7 44.Rdd1 Rde6 1/2-1/2
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Амеличкин Николай"]
+[Black "Дашков Александр"]
+[Result "1/2-1/2"]
+[ECO "B06"]
+[WhiteElo "1195"]
+[BlackElo "1407"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 g6 2.d4 Bg7 3.Nc3 d6 4.Nf3 Nd7 5.Be3 h6 6.Be2 c6 7.Qd2 a6
+8.O-O e6 9.Rfd1 d5 10.e5 Ne7 11.Bd3 Nf5 12.Bxf5 exf5 13.Ne2 g5
+14.Qc3 O-O 15.h3 Re8 16.b4 Nf8 17.Rab1 Bd7 18.Bc1 Ng6 19.g3 Kh7
+20.Qd3 Ne7 21.Kg2 Rh8 22.h4 g4 23.Nd2 Ng6 24.Nb3 b6 25.a4 f6
+26.Nf4 fxe5 27.Nxg6 Kxg6 28.dxe5 Bxe5 29.Bb2 Bxb2 30.Rxb2 Qf6
+31.c3 Rhe8 32.Nd4 c5 33.bxc5 bxc5 34.Ne2 Bxa4 35.Rdb1 Bb5 36.Nf4+
+Kh7 37.Nxd5 Bxd3 38.Nxf6+ Kg6 39.Rd1 Kxf6 40.Rxd3 Re6 41.Rd7
+Rc8 42.Rbb7 Rcc6 43.c4 Ke5 44.f4+ gxf3+ 45.Kxf3 Rcd6 46.Rdc7
+Kd4 47.Rb1 Re3+ 48.Kf2 Rd3 49.Rf7 Kxc4 50.Rxf5 R6d5 51.Rc1+ Kb5
+52.Rb1+ Kc6 53.Rf7 Rd2+ 54.Kf3 R2d3+ 55.Kg4 Rd7 56.Rxd7 Rxd7
+57.Kh5 Rd6 58.g4 c4 59.g5 hxg5 60.hxg5 Rd5 61.Kh6 Kc5 62.g6 Rd6
+63.Kh7 c3 64.g7 Rd7 65.Kh6 Rd8 66.Ra1 Kb5 67.Ra3 Kb4 68.Rxa6
+Rc8 69.Rf6 c2 70.Rf8 Kb3 71.Kh7 Rc7 72.Kg6 1/2-1/2
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Прохоров Алексей"]
+[Black "Станкевич Евгений"]
+[Result "0-1"]
+[ECO "B10"]
+[WhiteElo "1357"]
+[BlackElo "1218"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 c6 2.Nf3 d5 3.Nc3 d4 4.Ne2 c5 5.c3 Nc6 6.cxd4 cxd4 7.Qa4
+e6 8.Nexd4 Bd7 9.Nxc6 Bxc6 10.Bb5 Qb6 11.Bxc6+ bxc6 12.O-O g6
+13.d4 Rd8 14.Be3 Qb5 15.Qc2 Ne7 16.b3 Bg7 17.Rac1 O-O 18.Qc5
+Qxc5 19.Rxc5 Rd7 20.g3 Rb8 21.Rfc1 h6 22.Ne5 Bxe5 23.dxe5 Kg7
+24.R1c2 Rb4 25.R5c4 Rd1+ 26.Kg2 Rxc4 27.Rxc4 Rd7 28.Bc5 Nc8 29.Be3
+Rc7 30.b4 Nb6 31.Rc2 Nd7 32.f4 a6 33.Kf3 h5 34.h4 Kf8 35.a4 Ke8
+36.b5 axb5 37.axb5 c5 38.b6 Nxb6 39.Rxc5 Rxc5 40.Bxc5 Nd7 41.Bb4
+f6 42.exf6 Nxf6 43.Bc3 Nd7 44.Bd4 Kf7 45.e5 Ke7 46.Ke4 Kf7 47.Kd3
+Ke7 48.Kc4 Nb8 49.Kb5 Kd7 50.Bc5 Nc6 51.Kb6 Nd8 52.Bd6 Nf7 53.Bc7
+Nh6 54.Kb7 Nf5 55.Ba5 Nxg3 56.Kb6 Nf5 57.Be1 Ne3 58.Kc5 Ng2 59.Bg3
+Ne3 60.Kb4 Kc6 61.Kc3 Kd5 62.Kd3 Nf5 63.Bf2 Ne7 64.Bg1 Nc6 65.Bf2
+Nb4+ 66.Ke3 Kc4 67.Ke4 Nd3 68.Bg3 Nc5+ 69.Ke3 Kd5 70.Be1 Nb7
+71.Bb4 Nd8 72.Be1 Nf7 73.Bg3 Nh6 74.Be1 Ng4+ 75.Kf3 Kd4 76.Bg3
+Kd3 77.Be1 Ne3 78.Bf2 Nf1 79.Bg1 Nd2+ 80.Kf2 Ke4 81.Kg3 Kf5 82.Bb6
+Ke4 83.Ba5 Nf1+ 84.Kf2 Ne3 85.Kg3 Nf5+ 86.Kh3 Kxf4 87.Bc7 Ne3
+88.Bb8 Ng4 89.Bd6 Nxe5 0-1
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Абазов Асланбек"]
+[Black "Рогов Юрий"]
+[Result "1-0"]
+[ECO "B06"]
+[WhiteElo "1276"]
+[BlackElo "1235"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.e4 g6 2.d4 Bg7 3.Nc3 d6 4.Bg5 c5 5.Nge2 cxd4 6.Nxd4 Nc6 7.Bb5
+Bd7 8.Nf3 Qb6 9.Nd5 Qa5+ 10.Bd2 Qd8 11.Qc1 e6 12.Nc3 Qb6 13.O-O
+Ne5 14.Bxd7+ Nxd7 15.a4 a6 16.a5 Qc6 17.Re1 Rc8 18.h4 h5 19.Be3
+Ngf6 20.Nd4 Qc7 21.Re2 Ng4 22.Na4 Nxe3 23.Qxe3 Qxa5 24.Ra3 Qe5
+25.Nf3 Qb5 26.Nd4 Qc4 27.Rd2 b5 28.Rc3 Qxa4 29.Rxc8+ 1-0
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Реданский Владимир"]
+[Black "Сухарев Владимир"]
+[Result "1-0"]
+[ECO "D06"]
+[WhiteElo "1412"]
+[BlackElo "1262"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 d5 2.c4 Nf6 3.Nc3 Bf5 4.Qb3 Nc6 5.cxd5 Nxd5 6.Nxd5 Be4 7.Ne3
+Nxd4 8.Qd1 e5 9.Nf3 Bb4+ 10.Bd2 Qd6 11.Qa4+ Nc6 12.Bxb4 Qxb4+
+13.Qxb4 Nxb4 14.Nxe5 f5 15.a3 f4 16.axb4 fxe3 17.f3 Bc2 18.Ng4
+O-O-O 19.Nxe3 Bb3 20.Rxa7 Kb8 21.Ra3 Be6 22.Rd3 Rhe8 23.Kf2 Bd7
+24.g3 Bc6 25.Bg2 Bb5 26.Rxd8+ Rxd8 27.Rd1 Re8 28.f4 g6 29.Bf3
+Ka7 30.Nd5 Rd8 31.e4 Ba4 32.Ra1 b5 33.b3 1-0
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Гаан Анатолий"]
+[Black "Кузнецов Юрий"]
+[Result "1/2-1/2"]
+[ECO "D88"]
+[WhiteElo "1522"]
+[BlackElo "1330"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 Nf6 2.c4 g6 3.Nc3 d5 4.cxd5 Nxd5 5.e4 Nxc3 6.bxc3 Bg7 7.Bc4
+O-O 8.Ne2 c5 9.O-O Nc6 10.Be3 Na5 11.Bd3 cxd4 12.cxd4 b6 13.Rc1
+e6 14.Qd2 Bb7 15.f3 Qd7 16.Qb4 Rfc8 17.Bb5 Qd8 18.Qd2 Rxc1 19.Rxc1
+Rc8 20.Rxc8 Qxc8 21.Qc3 Qxc3 22.Nxc3 Bf6 23.Kf2 h5 24.Ke1 Kf8
+25.Kd2 Bd8 26.Bd3 Bc7 27.g3 Ke7 28.f4 Bb8 29.h3 Kd7 30.g4 hxg4
+31.hxg4 Ke7 32.e5 Bf3 33.f5 Bxg4 34.fxg6 fxg6 35.Bxg6 Nc4+ 36.Kd3
+Nxe3 37.Kxe3 Bh3 38.Bd3 Bg2 39.Bc4 Bc6 40.Kd3 Bb7 41.Ne2 a6 42.Nf4
+Bc8 43.a3 b5 44.Bb3 a5 45.Kc3 Bc7 46.Nd3 a4 47.Ba2 Ba5+ 48.Nb4
+Bb7 49.Kb2 Bxb4 50.axb4 Bf3 51.Bb1 Kd7 52.Bg6 Be2 53.Be4 1/2-1/2
+
+[Event "Мартовский кубок ЦАО-2026"]
+[Site "Москва, Проспект мира, 43"]
+[Date "2026.03.10"]
+[Round "?"]
+[White "Пинигин Салек"]
+[Black "Кудряев Иван"]
+[Result "1/2-1/2"]
+[ECO "E68"]
+[WhiteElo "1627"]
+[BlackElo "1447"]
+[Annotator ""]
+[Source ""]
+[Remark ""]
+
+1.d4 Nf6 2.c4 g6 3.g3 Bg7 4.Bg2 O-O 5.Nc3 d6 6.Nf3 Nbd7 7.O-O
+Re8 8.h3 e5 9.e4 exd4 10.Nxd4 Nc5 11.Re1 a5 12.Bg5 h6 13.Bf4
+Nh5 14.Be3 c6 15.Qd2 Kh7 16.Kh2 Qc7 17.f4 Be6 18.Nxe6 Nxe6 19.f5
+d5 20.cxd5 Qxg3+ 21.Kg1 Nef4 22.fxg6+ fxg6 23.Bxf4 Nxf4 24.Kh1
+Be5 25.Re3 Qg5 26.Rg1 Nh5 27.Ne2 c5 28.Bf1 Qf6 29.Bg2 Rf8 30.Rf3
+Qh4 31.Qe1 Qe7 32.Rgf1 Bd6 33.Qc3 Be5 34.Qb3 Rxf3 35.Rxf3 Bd6
+36.Qe3 Kg7 37.Qf2 Rf8 38.Kg1 Rxf3 39.Qxf3 Qe5 40.Qb3 Qe7 41.Qc3+
+Qe5 42.Qxa5 Qxb2 43.Qc3+ Be5 44.Qxb2 Bxb2 45.Kf2 Kf6 46.Ke3 Ke5
+47.a4 c4 48.Bf1 g5 49.Bg2 b6 50.Bf3 Nf6 51.Ng3 Bd4+ 52.Kd2 Bc5
+53.Kc3 Kf4 54.Nh5+ Nxh5 55.Bxh5 Kxe4 56.Kxc4 Be7 57.Bf7 Ke5 58.Kb5
+h5 59.Bxh5 Kxd5 60.Kxb6 Bd8+ 61.Kb5 Kd6 62.a5 Kc7 63.Bf3 Kb8
+64.a6 Ka7 65.Be2 Bb6 66.Kc6 1/2-1/2
+
