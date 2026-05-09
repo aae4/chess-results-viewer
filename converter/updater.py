@@ -10,7 +10,7 @@ import random
 from datetime import datetime
 
 # Текущий турнир
-# https://s2.chess-results.com/Tnr1361878.aspx?lan=11&SNode=S0
+# https://s3.chess-results.com/Tnr1408854.aspx?lan=11&SNode=S0
 # id: 1408854
 
 # --- ГЛОБАЛЬНЫЕ НАСТРОЙКИ ---
