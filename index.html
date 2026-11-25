@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Chess Results Viewer — Сайт переехал</title>
+  <title>Chess Results Viewer — Сайт переехал на chesstown.ru</title>
   <style>
     :root {
       --bg: #f8fafc;
@@ -13,6 +13,8 @@
       --muted: #475569;
       --border: #e2e8f0;
       --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --btn-text: #ffffff;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -21,7 +23,9 @@
         --text: #f1f5f9;
         --muted: #94a3b8;
         --border: #1e293b;
-        --accent: #60a5fa;
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --btn-text: #ffffff;
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,9 +66,26 @@
     p {
       color: var(--muted);
       font-size: 15px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
-    p:last-child {
+    .btn {
+      display: inline-block;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: var(--btn-text);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 8px;
+      transition: background-color 0.15s ease;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+    .hint {
+      font-size: 13px;
       margin-bottom: 0;
     }
   </style>
@@ -72,13 +93,15 @@
 <body>
   <main class="card">
     <div class="badge">Chess Results Viewer</div>
-    <h1>Сайт переезжает на новый адрес</h1>
+    <h1>Сайт переехал на новый адрес</h1>
     <p>
-      Старая версия на GitHub Pages больше не поддерживается и скоро будет полностью отключена.
+      Старая версия больше не поддерживается и скоро будет полностью отключена.
     </p>
     <p>
-      Новая версия проекта уже готовится к запуску — в ближайшие дни здесь появится анонс и ссылка на актуальный адрес сайта.
+      Новая версия проекта теперь работает по адресу <strong>chesstown.ru</strong>:
     </p>
+    <a class="btn" href="https://chesstown.ru/">Перейти на chesstown.ru</a>
+    <p class="hint">Пожалуйста, обновите закладку в браузере.</p>
   </main>
 </body>
 </html>
